@@ -1,0 +1,49 @@
+services:
+  # Container aplikasi Laravel (PHP-FPM)
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: dev
+    container_name: ${APP_NAME:-laravel}-app
+    volumes:
+      - .:/var/www/html
+    networks:
+      - internal
+      - shared-network
+
+  # Web server, meneruskan request .php ke container "app"
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ${APP_NAME:-laravel}-nginx
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - internal
+
+  # Dev server Bun/Vite untuk hot-reload asset (FlyonUI, JS, CSS)
+  bun:
+    image: oven/bun:1
+    container_name: ${APP_NAME:-laravel}-bun
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    command: sh -c "bun install && bun run dev -- --host 0.0.0.0"
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+  # Network ini sudah ada di luar (dibuat manual), berisi
+  # container shared-mysql. Jangan biarkan Docker Compose
+  # membuat network baru dengan nama ini.
+  shared-network:
+    external: true

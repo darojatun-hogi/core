@@ -1,0 +1,46 @@
+services:
+  app:
+    image: ghcr.io/darojatun-hogi/core-app:latest
+    container_name: ${APP_NAME:-laravel}-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - storage_data:/var/www/html/storage
+    networks:
+      - internal
+      - shared-network
+
+  nginx:
+    image: ghcr.io/darojatun-hogi/core-nginx:latest
+    container_name: ${APP_NAME:-laravel}-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks:
+      - internal
+
+  # Worker queue Laravel, image sama dengan "app" tapi command beda
+  queue:
+    image: ghcr.io/darojatun-hogi/core-app:latest
+    container_name: ${APP_NAME:-laravel}-queue
+    restart: unless-stopped
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    env_file:
+      - .env
+    volumes:
+      - storage_data:/var/www/html/storage
+    networks:
+      - internal
+      - shared-network
+
+volumes:
+  storage_data:
+
+networks:
+  internal:
+    driver: bridge
+  shared-network:
+    external: true

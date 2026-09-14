@@ -1,0 +1,81 @@
+@extends('layouts.dashboard.master')
+@section('title', 'User')
+@section('content')
+	<div class="flex w-full flex-col gap-4">
+		<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+			<div>
+				<h1 class="text-2xl font-semibold">User List</h1>
+				<p class="text-sm text-base-content/70">
+					Total record: <span class="font-semibold text-primary">{{ $users->total() }}</span>
+				</p>
+			</div>
+			<a href="{{ route('users.create') }}" class="btn btn-primary">Add New User</a>
+		</div>
+
+		<div class="rounded-box border border-base-300 bg-base-100 p-3 shadow-sm">
+			<form action="{{ route('users.index') }}" method="GET" class="flex w-full flex-row items-center gap-2">
+				<input type="search" name="search" value="{{ $search }}" placeholder="Search by name or email"
+					class="input input-bordered h-10 w-full min-w-0 flex-1">
+				<div class="flex shrink-0 gap-2">
+					<button type="submit" class="btn btn-primary btn-sm h-10">Search</button>
+					@if ($search)
+						<a href="{{ route('users.index') }}" class="btn btn-ghost btn-sm h-10">Clear</a>
+					@endif
+				</div>
+			</form>
+		</div>
+
+		@if ($users->count())
+			<div class="rounded-box border border-base-300 bg-base-100 p-3 shadow-sm">
+				<div class="mb-3 flex flex-col gap-1 text-sm text-base-content/70 flex-row items-center justify-between xl:hidden">
+					<span>
+						Showing {{ $users->firstItem() ?: 0 }} - {{ $users->lastItem() ?: 0 }} of {{ $users->total() }} users
+					</span>
+					<span class="badge badge-soft badge-primary">Page {{ $users->currentPage() }}</span>
+				</div>
+
+				<div class="overflow-x-auto">
+					<table class="table table-zebra w-full min-w-[720px]">
+						<thead>
+							<tr>
+								<th>#</th>
+								<th>Name</th>
+								<th>Email</th>
+								<th class="text-center">Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							@foreach ($users as $user)
+								<tr>
+									<td>{{ $loop->iteration }}</td>
+									<td>{{ $user->name }}</td>
+									<td>{{ $user->email }}</td>
+									<td class="min-w-[200px]">
+										<div class="flex flex-row flex-wrap items-center justify-center gap-1.5">
+											<a href="{{ route('users.show', $user) }}" class="btn btn-info btn-xs sm:btn-sm">View</a>
+											<a href="{{ route('users.edit', $user) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
+											<form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure?');"
+												class="inline-block">
+												@csrf
+												@method('DELETE')
+												<button type="submit" class="btn btn-danger btn-xs sm:btn-sm">Delete</button>
+											</form>
+										</div>
+									</td>
+								</tr>
+							@endforeach
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<div class="mt-2 flex justify-center xl:justify-between px-2">
+				{{ $users->links('vendor.pagination.flyonui') }}
+			</div>
+		@else
+			<div class="alert alert-info">
+				No users found for your search.
+			</div>
+		@endif
+	</div>
+@endsection
