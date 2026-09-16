@@ -67,6 +67,7 @@
 						Save User
 					</button>
 				</div>
+			</div>
 		</form>
 	</div>
 @endsection

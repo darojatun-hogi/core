@@ -1,4 +1,4 @@
-<nav class="navbar bg-base-100 shadow-base-300/20 shadow-sm px-3">
+<nav class="navbar bg-base-100 shadow-base-300/20 shadow-sm px-4">
 	{{-- Mobile menu button --}}
 	<button type="button" class="btn btn-text max-sm:btn-square sm:hidden" aria-haspopup="dialog" aria-expanded="false"
 		aria-controls="collapsible-mini-sidebar" data-overlay="#collapsible-mini-sidebar">

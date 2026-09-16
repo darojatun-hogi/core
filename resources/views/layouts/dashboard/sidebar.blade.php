@@ -28,6 +28,14 @@
 					<span class="overlay-minified:hidden">User</span>
 				</a>
 			</li>
+			@can('roles.manage')
+				<li>
+					<a href="{{ url('/roles') }}" @class(['active' => request()->is('/roles')])>
+						<span class="icon-[tabler--shield] size-5"></span>
+						<span class="overlay-minified:hidden">Roles & Permissions</span>
+					</a>
+				</li>
+			@endcan
 			{{-- <li
 				class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:15] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]">
 				<button id="dropdown-default" type="button" class="dropdown-toggle" aria-haspopup="menu" aria-expanded="false"

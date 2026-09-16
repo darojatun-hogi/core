@@ -17,7 +17,7 @@
 
 				@include('layouts.dashboard.navbar')
 
-				<main class="px-3 py-4 flex-1">
+				<main class="px-4 py-4 flex-1">
 					@yield('content')
 				</main>
 

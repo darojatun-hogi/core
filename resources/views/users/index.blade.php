@@ -50,7 +50,7 @@
 									<td>{{ $loop->iteration }}</td>
 									<td>{{ $user->name }}</td>
 									<td>{{ $user->email }}</td>
-									<td class="min-w-[200px]">
+									<td class="min-w-[200px] md:min-w-[280px]">
 										<div class="flex flex-row flex-wrap items-center justify-center gap-1.5">
 											<a href="{{ route('users.show', $user) }}" class="btn btn-info btn-xs sm:btn-sm">View</a>
 											<a href="{{ route('users.edit', $user) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
@@ -58,7 +58,7 @@
 												class="inline-block">
 												@csrf
 												@method('DELETE')
-												<button type="submit" class="btn btn-danger btn-xs sm:btn-sm">Delete</button>
+												<button type="submit" class="btn btn-error btn-xs sm:btn-sm">Delete</button>
 											</form>
 										</div>
 									</td>
