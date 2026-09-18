@@ -49,6 +49,10 @@ class RoleController extends Controller
 
     public function edit(Role $role)
     {
+        if($role->name == 'Super Admin'){
+            return redirect()->route('roles.index')->with('error','Super Admin role cannot be edited.');
+        }
+
         $this->authorize('update', $role);
         $permissions = Permission::orderBy('name')->get();
         return view('roles.edit', compact('role', 'permissions'));
@@ -56,6 +60,10 @@ class RoleController extends Controller
 
     public function update(UpdateRoleRequest $request, Role $role)
     {
+        if($role->name == 'Super Admin'){
+            return redirect()->route('roles.index')->with('error','Super Admin role cannot be updated.');
+        }
+
         $role->update(['name' => $request->name]);
         $role->syncPermissions($request->permissions ?? []);
         return redirect()->route('roles.index')->with('success', 'Successfully updated role.');
@@ -63,6 +71,10 @@ class RoleController extends Controller
 
     public function destroy(Role $role)
     {
+        if($role->name == 'Super Admin'){
+            return redirect()->route('roles.index')->with('error','Super Admin role cannot be deleted.');
+        }
+
         $this->authorize('delete', $role);
         $role->delete();
         return redirect()->route('roles.index')->with('success', 'Successfully deleted role.');

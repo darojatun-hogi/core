@@ -71,20 +71,35 @@
 				@enderror
 			</div>
 
-			<!-- Role -->
+			<!-- Roles (multiple) -->
 			<div class="form-control w-full">
-				<label class="label" for="role">
-					<span class="label-text font-medium">Role</span>
+				<label class="label" for="roles">
+					<span class="label-text font-medium">Roles</span>
 				</label>
-				<select id="role" name="role" class="select select-bordered w-full @error('role') input-error @enderror"
-					required>
-					<option value="" disabled selected>Select role</option>
+				<select id="roles" name="roles[]" multiple
+					data-select='{
+						"placeholder": "Select roles...",
+						"toggleTag": "<button type=\"button\" aria-expanded=\"false\"></button>",
+						"toggleClasses": "advance-select-toggle select-disabled:pointer-events-none select-disabled:opacity-40 @error('roles') is-invalid @enderror", 
+						"toggleCountText" : "roles selected" , 
+						"toggleCountTextMinItems" : 3, 
+						"dropdownClasses" : "advance-select-menu", 
+						"optionClasses" : "advance-select-option selected:select-active" ,
+						"optionTemplate" : "<div class=\" flex justify-between items-center w-full\"><span data-title></span><span class=\"icon-[tabler--check] shrink-0 size-4 text-primary hidden selected:block \"></span> </div>",
+						"extraMarkup": "<span class=\"icon-[tabler--caret-up-down] shrink-0 size-4 text-base-content absolute top-1/2 end-3 -translate-y-1/2 \"></span>" 
+					}'
+					class="hidden" 
+					required
+				>
 					@foreach ($roles as $role)
-						<option value="{{ $role }}" {{ old('role', 'User') === $role ? 'selected' : '' }}>{{ $role }}
-						</option>
+						<option value="{{ $role }}" {{ in_array($role, old('roles', ['User'])) ? 'selected' : '' }}>
+							{{ $role }}</option>
 					@endforeach
 				</select>
-				@error('role')
+				@error('roles')
+					<span class="text-error text-xs mt-1">{{ $message }}</span>
+				@enderror
+				@error('roles.*')
 					<span class="text-error text-xs mt-1">{{ $message }}</span>
 				@enderror
 			</div>

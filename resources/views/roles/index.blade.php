@@ -66,7 +66,9 @@
 									<td class="min-w-[200px] md:min-w-[280px]">
 										<div class="flex flex-row flex-wrap items-center justify-center gap-1.5">
 											<a href="{{ route('roles.show', $role) }}" class="btn btn-info btn-xs sm:btn-sm">Show</a>
-											<a href="{{ route('roles.edit', $role) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
+											@if ($role->name !== 'Super Admin')
+												<a href="{{ route('roles.edit', $role) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
+											@endif
 											@if ($role->name !== 'Super Admin')
 												<form action="{{ route('roles.destroy', $role) }}" method="POST"
 													onsubmit="return confirm('Are you sure?');" class="inline-block">

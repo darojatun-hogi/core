@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UserStoreRequest extends FormRequest
 {
@@ -18,7 +19,19 @@ class UserStoreRequest extends FormRequest
             'username' => ['required', 'string', 'max:255', 'unique:users,username', 'alpha_dash'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'exists:roles,name'],
+            'roles' => ['required', 'array', 'min:1'],
+            'roles.*' => ['exists:roles,name'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if (in_array('Super Admin', $this->input('roles', [])) 
+                && ! $this->user()->hasRole('Super Admin')) 
+            {
+                $validator->errors()->add('roles', 'Only a Super Admin can assign the Super Admin role.');
+            }
+        });
     }
 }

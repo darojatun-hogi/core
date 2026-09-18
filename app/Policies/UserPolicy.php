@@ -23,11 +23,18 @@ class UserPolicy
 
     public function update(User $user, User $model): bool
     {
+        if ($model->hasRole('Super Admin') && ! $user->hasRole('Super Admin')) {
+            return false;
+        }
         return $user->can('users.edit');
     }
 
     public function delete(User $user, User $model): bool
     {
+        if ($model->hasRole('Super Admin') && ! $user->hasRole('Super Admin')) {
+            return false;
+        }
+
         return $user->can('users.delete') && $user->id !== $model->id;
     }
 }

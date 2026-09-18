@@ -59,10 +59,10 @@
 											@can('users.view')
 												<a href="{{ route('users.show', $user) }}" class="btn btn-info btn-xs sm:btn-sm">View</a>
 											@endcan
-											@can('users.edit')
+											@can('update', $user)
 												<a href="{{ route('users.edit', $user) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
 											@endcan
-											@can('users.delete')
+											@can('delete', $user)
 												<form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure?');"
 													class="inline-block">
 													@csrf

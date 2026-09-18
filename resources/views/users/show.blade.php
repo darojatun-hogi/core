@@ -9,7 +9,7 @@
 				<p class="text-sm text-base-content/70">Overview of user's profile information.</p>
 			</div>
 			<div class="flex gap-2">
-				@can('users.edit')
+				@can('update', $user)
 					<a href="{{ route('users.edit', $user->id) }}" class="btn btn-warning btn-sm">
 						Edit
 					</a>
@@ -67,7 +67,7 @@
 
 		<!-- Delete Action Modal Trigger -->
 		<div class="mt-8 pt-4 border-t border-base-200 flex justify-end items-center">
-			@can('users.delete')
+			@can('delete', $user)
 				<form action="{{ route('users.destroy', $user->id) }}" method="POST"
 					onsubmit="return confirm('Are you sure you want to delete this user?');">
 					@csrf

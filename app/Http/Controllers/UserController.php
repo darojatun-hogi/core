@@ -22,10 +22,17 @@ class UserController extends Controller
 
         $users = User::query()
             ->with('roles')
+            ->when(! $request->user()->hasRole('Super Admin'), function ($query) {
+                $query->whereDoesntHave('roles', function ($query) {
+                    $query->where('name', 'Super Admin');
+                });
+            })
             ->when($search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('username', 'like', "%{$search}%");
+                $query->where(function ($query) use ($search) {
+                   $query->where('name', 'like', "%{$search}%")
+                       ->orWhere('email', 'like', "%{$search}%")
+                       ->orWhere('username', 'like', "%{$search}%");
+               });
             })
             ->orderBy('name')
             ->paginate(10)
@@ -37,11 +44,15 @@ class UserController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $this->authorize('create', User::class);
 
         $roles = Role::pluck('name', 'name');
+
+        if (! $request->user()->hasRole('Super Admin')) {
+            $roles = $roles->except('Super Admin');
+        }
 
         return view('users.create', compact('roles'));
     }
@@ -60,7 +71,7 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $user->syncRoles($validated['role']);
+        $user->syncRoles($validated['roles']);
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
@@ -80,11 +91,15 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User $user)
+    public function edit(Request $request, User $user)
     {
         $this->authorize('update', $user);
 
         $roles = Role::pluck('name', 'name');
+
+        if (! $request->user()->hasRole('Super Admin')) {
+            $roles = $roles->except('Super Admin');
+        }
 
         return view('users.edit', compact('user', 'roles'));
     }
@@ -103,7 +118,7 @@ class UserController extends Controller
             'password' => $validated['password'] ? Hash::make($validated['password']) : $user->password,
         ]);
 
-        $user->syncRoles($validated['role']);
+        $user->syncRoles($validated['roles']);
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }
