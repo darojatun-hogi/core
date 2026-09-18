@@ -22,6 +22,18 @@
 				@enderror
 			</div>
 
+			{{-- Username --}}
+			<div class="form-control w-full">
+				<label class="label" for="username">
+					<span class="label-text font-medium">Username</span>
+				</label>
+				<input type="text" id="username" name="username" placeholder="Enter username" value="{{ old('username') }}"
+					class="input input-bordered w-full @error('username') is-invalid @enderror" required />
+				@error('username')
+					<span class="text-error text-xs mt-1">{{ $message }}</span>
+				@enderror
+			</div>
+
 			<!-- Email -->
 			<div class="form-control w-full">
 				<label class="label" for="email">

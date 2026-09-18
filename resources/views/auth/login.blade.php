@@ -1,9 +1,9 @@
 @extends('layouts.auth.master')
 @section('content')
 	<div class="mb-6 text-center">
-		<h1 class="text-2xl font-semibold text-base-content">Masuk ke Akun Anda</h1>
+		<h1 class="text-2xl font-semibold text-base-content">Login</h1>
 		<p class="mt-1 text-sm text-base-content/60">
-			Silakan masukkan email dan password Anda
+			Input your email and password to access your account.
 		</p>
 	</div>
 
@@ -17,14 +17,14 @@
 	<form method="POST" action="{{ route('login.authenticate') }}" class="space-y-4">
 		@csrf
 
-		{{-- Email --}}
+		{{-- Email or Username --}}
 		<div class="form-control w-full">
-			<label for="email" class="label-text mb-1.5 block font-medium">
-				Email
+			<label for="login" class="label-text mb-1.5 block font-medium">
+				Email or Username
 			</label>
-			<input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
-				autocomplete="username" placeholder="john@example.com" class="input @error('email') is-invalid @enderror w-full" />
-			@error('email')
+			<input id="login" type="text" name="login" value="{{ old('login') }}" required autofocus
+				placeholder="john_doe" class="input @error('login') is-invalid @enderror w-full" />
+			@error('login')
 				<span class="label-text-alt text-error mt-1.5 block">
 					{{ $message }}
 				</span>
@@ -39,7 +39,7 @@
 				</label>
 				@if (Route::has('password.request'))
 					<a href="{{ route('password.request') }}" class="link link-primary text-sm">
-						Lupa password?
+						Forgot your password?
 					</a>
 				@endif
 			</div>
@@ -56,20 +56,20 @@
 		<div class="flex items-center gap-2">
 			<input id="remember_me" type="checkbox" name="remember" class="checkbox checkbox-sm checkbox-primary" />
 			<label for="remember_me" class="label-text cursor-pointer text-sm">
-				Ingat saya
+				Remember me
 			</label>
 		</div>
 
 		{{-- Submit --}}
 		<button type="submit" class="btn btn-primary w-full mt-2">
-			Masuk
+			Login
 		</button>
 
 		@if (Route::has('register'))
 			<p class="mt-4 text-center text-sm text-base-content/60">
-				Belum punya akun?
+				Don't have an account?
 				<a href="{{ route('register') }}" class="link link-primary font-medium">
-					Daftar sekarang
+					Register
 				</a>
 			</p>
 		@endif

@@ -40,6 +40,7 @@
 							<tr>
 								<th>#</th>
 								<th>Name</th>
+								<th>Username</th>
 								<th>Email</th>
 								<th class="text-center">Actions</th>
 							</tr>
@@ -49,6 +50,7 @@
 								<tr>
 									<td>{{ $loop->iteration }}</td>
 									<td>{{ $user->name }}</td>
+									<td>{{ $user->username }}</td>
 									<td>{{ $user->email }}</td>
 									<td class="min-w-[200px] md:min-w-[280px]">
 										<div class="flex flex-row flex-wrap items-center justify-center gap-1.5">
