@@ -74,6 +74,26 @@
 				@enderror
 			</div>
 
+			<!-- Role -->
+			<div class="form-control w-full">
+				<label class="label" for="role">
+					<span class="label-text font-medium">Role</span>
+				</label>
+				<select id="role" name="role" class="select select-bordered w-full @error('role') input-error @enderror"
+					required>
+					<option value="" disabled>Select role</option>
+					@foreach ($roles as $role)
+						<option value="{{ $role }}"
+							{{ old('role', $user->roles->first()->name ?? '') === $role ? 'selected' : '' }}>
+							{{ $role }}
+						</option>
+					@endforeach
+				</select>
+				@error('role')
+					<span class="text-error text-xs mt-1">{{ $message }}</span>
+				@enderror
+			</div>
+
 			<!-- Action Buttons -->
 			<div class="flex items-center justify-end gap-3 pt-4 border-t border-base-200">
 				<a href="{{ route('users.index') }}" class="btn btn-ghost">

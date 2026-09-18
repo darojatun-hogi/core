@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UserStoreRequest;
+use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -12,16 +16,21 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', User::class);
+
         $search = $request->input('search');
 
         $users = User::query()
+            ->with('roles')
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%");
             })
             ->orderBy('name')
             ->paginate(10)
             ->withQueryString();
+
         return view('users.index', compact('users', 'search'));
     }
 
@@ -30,24 +39,28 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('users.create');
+        $this->authorize('create', User::class);
+
+        $roles = Role::pluck('name', 'name');
+
+        return view('users.create', compact('roles'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(UserStoreRequest $request)
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'username' => 'required|string|min:3|max:255|unique:users|alpha_dash',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+        $validated = $request->validated();
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'username' => $validated['username'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
         ]);
 
-        $validatedData['password'] = bcrypt($validatedData['password']);
-
-        User::create($validatedData);
+        $user->syncRoles($validated['role']);
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
@@ -55,42 +68,42 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(User $user)
     {
-        $user = User::findOrFail($id);
+        $this->authorize('view', $user);
+
+        $user->load('roles');
+
         return view('users.show', compact('user'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(User $user)
     {
-        $user = User::findOrFail($id);
-        return view('users.edit', compact('user'));
+        $this->authorize('update', $user);
+
+        $roles = Role::pluck('name', 'name');
+
+        return view('users.edit', compact('user', 'roles'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UserUpdateRequest $request, User $user)
     {
-        $user = User::findOrFail($id);
+        $validated = $request->validated();
 
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'username' => 'required|string|min:3|max:255|alpha_dash|unique:users,username,' . $user->id,
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
+        $user->update([
+            'name' => $validated['name'],
+            'username' => $validated['username'],
+            'email' => $validated['email'],
+            'password' => $validated['password'] ? Hash::make($validated['password']) : $user->password,
         ]);
 
-        if (!empty($validatedData['password'])) {
-            $validatedData['password'] = bcrypt($validatedData['password']);
-        } else {
-            unset($validatedData['password']);
-        }
-
-        $user->update($validatedData);
+        $user->syncRoles($validated['role']);
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }
@@ -98,9 +111,10 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(User $user)
     {
-        $user = User::findOrFail($id);
+        $this->authorize('delete', $user);
+
         $user->delete();
 
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');

@@ -9,7 +9,9 @@
 					Total record: <span class="font-semibold text-primary">{{ $users->total() }}</span>
 				</p>
 			</div>
-			<a href="{{ route('users.create') }}" class="btn btn-primary">Add New User</a>
+			@can('users.create')
+				<a href="{{ route('users.create') }}" class="btn btn-primary">Add New User</a>
+			@endcan
 		</div>
 
 		<div class="rounded-box border border-base-300 bg-base-100 p-3 shadow-sm">
@@ -54,14 +56,20 @@
 									<td>{{ $user->email }}</td>
 									<td class="min-w-[200px] md:min-w-[280px]">
 										<div class="flex flex-row flex-wrap items-center justify-center gap-1.5">
-											<a href="{{ route('users.show', $user) }}" class="btn btn-info btn-xs sm:btn-sm">View</a>
-											<a href="{{ route('users.edit', $user) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
-											<form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure?');"
-												class="inline-block">
-												@csrf
-												@method('DELETE')
-												<button type="submit" class="btn btn-error btn-xs sm:btn-sm">Delete</button>
-											</form>
+											@can('users.view')
+												<a href="{{ route('users.show', $user) }}" class="btn btn-info btn-xs sm:btn-sm">View</a>
+											@endcan
+											@can('users.edit')
+												<a href="{{ route('users.edit', $user) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
+											@endcan
+											@can('users.delete')
+												<form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure?');"
+													class="inline-block">
+													@csrf
+													@method('DELETE')
+													<button type="submit" class="btn btn-error btn-xs sm:btn-sm">Delete</button>
+												</form>
+											@endcan
 										</div>
 									</td>
 								</tr>

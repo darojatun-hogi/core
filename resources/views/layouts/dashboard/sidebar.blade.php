@@ -22,12 +22,14 @@
 					<span class="overlay-minified:hidden">Home</span>
 				</a>
 			</li>
-			<li>
-				<a href="{{ url('/users') }}" @class(['active' => request()->is('/users')])>
-					<span class="icon-[tabler--users] size-5"></span>
-					<span class="overlay-minified:hidden">User</span>
-				</a>
-			</li>
+			@can('users.view')
+				<li>
+					<a href="{{ url('/users') }}" @class(['active' => request()->is('/users')])>
+						<span class="icon-[tabler--users] size-5"></span>
+						<span class="overlay-minified:hidden">User</span>
+					</a>
+				</li>
+			@endcan
 			@can('roles.manage')
 				<li>
 					<a href="{{ url('/roles') }}" @class(['active' => request()->is('/roles')])>

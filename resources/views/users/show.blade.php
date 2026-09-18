@@ -9,9 +9,11 @@
 				<p class="text-sm text-base-content/70">Overview of user's profile information.</p>
 			</div>
 			<div class="flex gap-2">
-				<a href="{{ route('users.edit', $user->id) }}" class="btn btn-warning btn-sm">
-					Edit
-				</a>
+				@can('users.edit')
+					<a href="{{ route('users.edit', $user->id) }}" class="btn btn-warning btn-sm">
+						Edit
+					</a>
+				@endcan
 				<a href="{{ route('users.index') }}" class="btn btn-ghost btn-sm">
 					Back to List
 				</a>
@@ -32,10 +34,28 @@
 				<span class="text-sm font-medium text-base-content">{{ $user->name }}</span>
 			</div>
 
+			<!-- Username -->
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-base-200/50">
+				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Username</span>
+				<span class="text-sm font-medium text-base-content">{{ $user->username }}</span>
+			</div>
+
 			<!-- Email -->
 			<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-base-200/50">
 				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Email</span>
 				<span class="text-sm font-medium text-base-content">{{ $user->email }}</span>
+			</div>
+
+			<!-- Role -->
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-base-200/50">
+				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Role</span>
+				<span class="flex gap-1">
+					@forelse ($user->roles as $role)
+						<span class="badge badge-soft badge-primary">{{ $role->name }}</span>
+					@empty
+						<span class="text-sm text-base-content/50">No role assigned</span>
+					@endforelse
+				</span>
 			</div>
 
 			<!-- Metadata (Created / Updated) -->
@@ -47,14 +67,16 @@
 
 		<!-- Delete Action Modal Trigger -->
 		<div class="mt-8 pt-4 border-t border-base-200 flex justify-end items-center">
-			<form action="{{ route('users.destroy', $user->id) }}" method="POST"
-				onsubmit="return confirm('Are you sure you want to delete this user?');">
-				@csrf
-				@method('DELETE')
-				<button type="submit" class="btn btn-error btn-outline btn-xs">
-					Delete User
-				</button>
-			</form>
+			@can('users.delete')
+				<form action="{{ route('users.destroy', $user->id) }}" method="POST"
+					onsubmit="return confirm('Are you sure you want to delete this user?');">
+					@csrf
+					@method('DELETE')
+					<button type="submit" class="btn btn-error btn-outline btn-xs">
+						Delete User
+					</button>
+				</form>
+			@endcan
 		</div>
 	</div>
 @endsection
