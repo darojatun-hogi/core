@@ -117,32 +117,14 @@
 						</div>
 					</div>
 					<div>
-						<h6 class="text-base-content text-base font-semibold">John Doe</h6>
-						<small class="text-base-content/50">Admin</small>
+						<h6 class="text-base-content text-base font-semibold">{{ auth()->user()->name }}</h6>
+						<small class="text-base-content/50">{{ auth()->user()->roles->first()->name }}</small>
 					</div>
 				</li>
 				<li>
-					<a class="dropdown-item" href="#">
+					<a class="dropdown-item" href="{{ route('profile.edit') }}">
 						<span class="icon-[tabler--user]"></span>
 						My Profile
-					</a>
-				</li>
-				<li>
-					<a class="dropdown-item" href="#">
-						<span class="icon-[tabler--settings]"></span>
-						Settings
-					</a>
-				</li>
-				<li>
-					<a class="dropdown-item" href="#">
-						<span class="icon-[tabler--receipt-rupee]"></span>
-						Billing
-					</a>
-				</li>
-				<li>
-					<a class="dropdown-item" href="#">
-						<span class="icon-[tabler--help-triangle]"></span>
-						FAQs
 					</a>
 				</li>
 				<li class="dropdown-footer gap-2">
