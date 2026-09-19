@@ -37,11 +37,6 @@
 				<label for="password" class="label-text font-medium">
 					Password
 				</label>
-				@if (Route::has('password.request'))
-					<a href="{{ route('password.request') }}" class="link link-primary text-sm">
-						Forgot your password?
-					</a>
-				@endif
 			</div>
 			<input id="password" type="password" name="password" required autocomplete="current-password" placeholder="••••••••"
 				class="input @error('password') is-invalid @enderror w-full" />
@@ -53,11 +48,22 @@
 		</div>
 
 		{{-- Remember Me --}}
-		<div class="flex items-center gap-2">
-			<input id="remember_me" type="checkbox" name="remember" class="checkbox checkbox-sm checkbox-primary" />
-			<label for="remember_me" class="label-text cursor-pointer text-sm">
-				Remember me
+		<div class="flex items-center justify-between">
+			<label for="remember_me" class="inline-flex items-center gap-2 cursor-pointer">
+				<input 
+					id="remember_me" 
+					type="checkbox" 
+					name="remember" 
+					class="checkbox checkbox-sm checkbox-primary" 
+				/>
+				<span class="text-sm label-text">Remember me</span>
 			</label>
+
+			@if (Route::has('password.request'))
+				<a href="{{ route('password.request') }}" class="text-sm link link-primary">
+					Forgot your password?
+				</a>
+			@endif
 		</div>
 
 		{{-- Submit --}}
