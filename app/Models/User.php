@@ -55,4 +55,11 @@ class User extends Authenticatable
             }
         });
     }
+
+    public static function notifiableAdmins(?User $except = null)
+    {
+        return static::role(['Admin', 'Super Admin'])
+            ->when($except, fn ($q) => $q->whereKeyNot($except->id))
+            ->get();
+    }
 }

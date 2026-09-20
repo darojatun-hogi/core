@@ -8,6 +8,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\NotificationController;
 
 Route::get('/',[AuthController::class, 'login'])->name('root');
 Route::get('login', [AuthController::class, 'login'])->name('login');
@@ -27,6 +28,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('profile/password', [ProfileController::class,'updatePassword'])->name('profile.password.update');
+
+    Route::get('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
 });
 
 Route::middleware('guest')->group(function () {

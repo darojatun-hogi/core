@@ -24,6 +24,17 @@
 				});
 			</script>
 		@endif
+
+		@if (session('info'))
+			<script>
+				window.addEventListener('load', function() {
+					window.notyf.open({
+						type: 'info',
+						message: @json(session('info'))
+					});
+				});
+			</script>
+		@endif
 	</head>
 
 	<body class="h-screen overflow-hidden">

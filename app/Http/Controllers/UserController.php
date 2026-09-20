@@ -8,9 +8,19 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\UserActivityNotification;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+    protected function notifiableAdmins(?User $except = null)
+    {
+        return User::role(['Admin', 'Super Admin'])
+            ->when($except, fn ($q) => $q->whereKeyNot($except->id))
+            ->get();
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -73,6 +83,11 @@ class UserController extends Controller
 
         $user->syncRoles($validated['roles']);
 
+        Notification::send(
+            User::notifiableAdmins(except: Auth::user()),
+            new UserActivityNotification($user, Auth::user(), 'created')
+        );
+
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
 
@@ -120,6 +135,11 @@ class UserController extends Controller
 
         $user->syncRoles($validated['roles']);
 
+        Notification::send(
+            User::notifiableAdmins(except: Auth::user()),
+            new UserActivityNotification($user, Auth::user(), 'updated')
+        );
+
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }
 
@@ -129,6 +149,11 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         $this->authorize('delete', $user);
+
+        Notification::send(
+            User::notifiableAdmins(except: Auth::user()),
+            new UserActivityNotification($user, Auth::user(), 'deleted')
+        );
 
         $user->delete();
 

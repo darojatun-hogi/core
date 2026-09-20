@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\UserRegisteredNotification;
 
 class AuthController extends Controller
 {
@@ -42,6 +44,11 @@ class AuthController extends Controller
             'email' => $validatedData['email'],
             'password' => Hash::make($validatedData['password']),
         ]);
+        
+        Notification::send(
+            User::notifiableAdmins(except: Auth::user()),
+            new UserRegisteredNotification($user)
+        );
 
         Auth::login($user);
 

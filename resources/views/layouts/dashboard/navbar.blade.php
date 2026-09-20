@@ -16,7 +16,9 @@
 				class="dropdown-toggle btn btn-text btn-circle dropdown-open:bg-base-content/10 size-10" aria-haspopup="menu"
 				aria-expanded="false" aria-label="Dropdown">
 				<div class="indicator">
-					<span class="indicator-item bg-error size-2 rounded-full"></span>
+					@if ($unreadNotificationsCount > 0)
+						<span class="indicator-item bg-error size-2 rounded-full"></span>
+					@endif
 					<span class="icon-[tabler--bell] text-base-content size-5.5"></span>
 				</div>
 			</button>
@@ -26,74 +28,30 @@
 					<h6 class="text-base-content text-base">Notifications</h6>
 				</div>
 				<div class="overflow-auto text-base-content/80 max-h-56 max-md:max-w-60">
-					<div class="dropdown-item">
-						<div class="avatar avatar-away-bottom">
-							<div class="w-10 rounded-full">
-								<img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-1.png" alt="avatar 1" />
+					@forelse ($navbarNotifications as $notification)
+						<a href="{{ route('notifications.read', $notification->id) }}"
+							class="dropdown-item {{ $notification->read_at ? '' : 'bg-base-200/50' }}">
+							<div class="relative shrink-0">
+								<div class="avatar avatar-placeholder @unless ($notification->read_at) avatar-busy-top @endunless">
+									<div class="bg-neutral text-neutral-content size-12 rounded-full">
+										<span class="text-sm">
+											{{ Str::of($notification->data['actor_name'] ?? '?')->substr(0, 2)->upper() }}
+										</span>
+									</div>
+								</div>
 							</div>
-						</div>
-						<div class="w-60">
-							<h6 class="truncate text-base">Charles Franklin</h6>
-							<small class="text-base-content/50 truncate">Accepted your connection</small>
-						</div>
-					</div>
-					<div class="dropdown-item">
-						<div class="avatar">
-							<div class="w-10 rounded-full">
-								<img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-2.png" alt="avatar 2" />
+							<div class="w-60">
+								<h6 class="truncate text-base">{{ $notification->data['title'] }}</h6>
+								<small class="text-base-content/50 truncate">{{ $notification->data['message'] }}</small>
 							</div>
+						</a>
+					@empty
+						<div class="dropdown-item justify-center text-base-content/50">
+							No notifications yet.
 						</div>
-						<div class="w-60">
-							<h6 class="truncate text-base">Martian added moved Charts & Maps task to the done board.</h6>
-							<small class="text-base-content/50 truncate">Today 10:00 AM</small>
-						</div>
-					</div>
-					<div class="dropdown-item">
-						<div class="avatar avatar-online-bottom">
-							<div class="w-10 rounded-full">
-								<img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-8.png" alt="avatar 8" />
-							</div>
-						</div>
-						<div class="w-60">
-							<h6 class="truncate text-base">New Message</h6>
-							<small class="text-base-content/50 truncate">You have new message from Natalie</small>
-						</div>
-					</div>
-					<div class="dropdown-item">
-						<div class="avatar avatar-placeholder">
-							<div class="bg-neutral text-neutral-content w-10 rounded-full p-2">
-								<span class="icon-[tabler--user] size-full"></span>
-							</div>
-						</div>
-						<div class="w-60">
-							<h6 class="truncate text-base">Application has been approved 🚀</h6>
-							<small class="text-base-content/50 text-wrap">Your ABC project application has been approved.</small>
-						</div>
-					</div>
-					<div class="dropdown-item">
-						<div class="avatar">
-							<div class="w-10 rounded-full">
-								<img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-10.png" alt="avatar 10" />
-							</div>
-						</div>
-						<div class="w-60">
-							<h6 class="truncate text-base">New message from Jane</h6>
-							<small class="text-base-content/50 text-wrap">Your have new message from Jane</small>
-						</div>
-					</div>
-					<div class="dropdown-item">
-						<div class="avatar">
-							<div class="w-10 rounded-full">
-								<img src="https://cdn.flyonui.com/fy-assets/avatar/avatar-3.png" alt="avatar 3" />
-							</div>
-						</div>
-						<div class="w-60">
-							<h6 class="truncate text-base">Barry Commented on App review task.</h6>
-							<small class="text-base-content/50 truncate">Today 8:32 AM</small>
-						</div>
-					</div>
+					@endforelse
 				</div>
-				<a href="#" class="dropdown-footer justify-center gap-1">
+				<a href="{{ route('notifications.index') }}" class="dropdown-footer justify-center gap-1">
 					<span class="icon-[tabler--eye] size-4"></span>
 					View all
 				</a>
