@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 
 class StoreRoleRequest extends FormRequest
 {

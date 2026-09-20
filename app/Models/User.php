@@ -8,9 +8,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\Models\Activity;
+
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -61,5 +65,23 @@ class User extends Authenticatable
         return static::role(['Admin', 'Super Admin'])
             ->when($except, fn ($q) => $q->whereKeyNot($except->id))
             ->get();
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'username', 'email'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
+    public function tapActivity(Activity $activity, string $eventName): void
+    {
+        $activity->description = match ($eventName) {
+            'created' => "User \"{$this->name}\" was created",
+            'updated' => "User \"{$this->name}\" was updated",
+            'deleted' => "User \"{$this->name}\" was deleted",
+            default   => $activity->description,
+        };
     }
 }

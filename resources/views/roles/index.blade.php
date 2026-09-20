@@ -10,14 +10,14 @@
 				</p>
 			</div>
 			<div class="flex gap-2">
-				@can('managePermissions', \Spatie\Permission\Models\Role::class)
+				@can('managePermissions', \App\Models\Role::class)
 					<button type="button" class="btn btn-secondary" aria-haspopup="dialog" aria-expanded="false"
 						aria-controls="permission-modal" data-overlay="#permission-modal">
 						<span class="icon-[tabler--key] size-4"></span>
 						Manage Permission
 					</button>
 				@endcan
-				@can('create', \Spatie\Permission\Models\Role::class)
+				@can('create', \App\Models\Role::class)
 					<a href="{{ route('roles.create') }}" class="btn btn-primary">Add New Role</a>
 				@endcan
 			</div>
@@ -129,7 +129,7 @@
 		</div>
 	</div>
 
-	@can('managePermissions', \Spatie\Permission\Models\Role::class)
+	@can('managePermissions', \App\Models\Role::class)
 		{{-- Manage Permission Modal --}}
 		<div id="permission-modal" class="overlay modal overlay-open:opacity-100 overlay-open:duration-300 hidden"
 			role="dialog" tabindex="-1">

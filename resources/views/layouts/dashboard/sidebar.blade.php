@@ -17,14 +17,14 @@
 	<div class="drawer-body px-2 pt-4">
 		<ul class="menu p-0">
 			<li>
-				<a href="{{ url('/') }}" @class(['active' => request()->is('/')])>
+				<a href="{{ route('dashboard') }}" @class(['active' => request()->is('/')])>
 					<span class="icon-[tabler--home] size-5"></span>
 					<span class="overlay-minified:hidden">Home</span>
 				</a>
 			</li>
 			@can('users.view')
 				<li>
-					<a href="{{ url('/users') }}" @class(['active' => request()->is('/users')])>
+					<a href="{{ route('users.index') }}" @class(['active' => request()->is('/users')])>
 						<span class="icon-[tabler--users] size-5"></span>
 						<span class="overlay-minified:hidden">User</span>
 					</a>
@@ -32,9 +32,17 @@
 			@endcan
 			@can('roles.manage')
 				<li>
-					<a href="{{ url('/roles') }}" @class(['active' => request()->is('/roles')])>
+					<a href="{{ route('roles.index') }}" @class(['active' => request()->is('/roles')])>
 						<span class="icon-[tabler--shield] size-5"></span>
 						<span class="overlay-minified:hidden">Roles & Permissions</span>
+					</a>
+				</li>
+			@endcan
+			@can('activity-log.view')
+				<li>
+					<a href="{{ route('activity-log.index') }}" @class(['active' => request()->is('/activity-log')])>
+						<span class="icon-[tabler--history] size-5"></span>
+						<span class="overlay-minified:hidden">Activity Log</span>
 					</a>
 				</li>
 			@endcan

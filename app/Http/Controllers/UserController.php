@@ -6,7 +6,7 @@ use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\UserActivityNotification;
@@ -83,6 +83,14 @@ class UserController extends Controller
 
         $user->syncRoles($validated['roles']);
 
+        $activity = $user->activities()->where('event', 'created')->latest()->first();
+        if ($activity) {
+            $properties = $activity->properties->toArray();
+            $properties['attributes']['roles'] = $user->getRoleNames()->toArray();
+            $activity->properties = collect($properties);
+            $activity->save();
+        }
+
         Notification::send(
             User::notifiableAdmins(except: Auth::user()),
             new UserActivityNotification($user, Auth::user(), 'created')
@@ -126,6 +134,8 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
+        $oldRoles = $user->getRoleNames()->toArray();
+        
         $user->update([
             'name' => $validated['name'],
             'username' => $validated['username'],
@@ -134,6 +144,17 @@ class UserController extends Controller
         ]);
 
         $user->syncRoles($validated['roles']);
+
+        $newRoles = $user->getRoleNames()->toArray();
+
+        if ($oldRoles !== $newRoles) {
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($user)
+                ->event('updated')
+                ->withProperties(['old' => ['roles' => $oldRoles], 'attributes' => ['roles' => $newRoles]])
+                ->log("Roles updated for \"{$user->name}\"");
+        }
 
         Notification::send(
             User::notifiableAdmins(except: Auth::user()),
