@@ -23,7 +23,7 @@
 				Email or Username
 			</label>
 			<input id="login" type="text" name="login" value="{{ old('login') }}" required autofocus
-				placeholder="john_doe" class="input @error('login') is-invalid @enderror w-full" />
+				placeholder="john@example.com" class="input @error('login') is-invalid @enderror w-full" />
 			@error('login')
 				<span class="label-text-alt text-error mt-1.5 block">
 					{{ $message }}
@@ -50,12 +50,7 @@
 		{{-- Remember Me --}}
 		<div class="flex items-center justify-between">
 			<label for="remember_me" class="inline-flex items-center gap-2 cursor-pointer">
-				<input 
-					id="remember_me" 
-					type="checkbox" 
-					name="remember" 
-					class="checkbox checkbox-sm checkbox-primary" 
-				/>
+				<input id="remember_me" type="checkbox" name="remember" class="checkbox checkbox-sm checkbox-primary" />
 				<span class="text-sm label-text">Remember me</span>
 			</label>
 

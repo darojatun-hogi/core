@@ -17,6 +17,7 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
-        "flyonui": "^2.4.1"
+        "flyonui": "^2.4.1",
+        "notyf": "^3.10.0"
     }
 }

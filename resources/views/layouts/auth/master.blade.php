@@ -7,6 +7,21 @@
 		<title>Login</title>
 
 		@vite(['resources/css/app.css', 'resources/js/app.js'])
+		@if (session('success'))
+			<script>
+				window.addEventListener('load', function() {
+					window.notyf.success(@json(session('success')));
+				});
+			</script>
+		@endif
+
+		@if (session('error'))
+			<script>
+				window.addEventListener('load', function() {
+					window.notyf.error(@json(session('error')));
+				});
+			</script>
+		@endif
 	</head>
 
 	<body class="font-sans antialiased bg-base-200">

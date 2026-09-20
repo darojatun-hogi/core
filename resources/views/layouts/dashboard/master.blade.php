@@ -7,6 +7,23 @@
 		<title>@yield('title', 'Elips')</title>
 
 		@vite(['resources/css/app.css', 'resources/js/app.js'])
+
+		{{-- Script Toaster --}}
+		@if (session('success'))
+			<script>
+				window.addEventListener('load', function() {
+					window.notyf.success(@json(session('success')));
+				});
+			</script>
+		@endif
+
+		@if (session('error'))
+			<script>
+				window.addEventListener('load', function() {
+					window.notyf.error(@json(session('error')));
+				});
+			</script>
+		@endif
 	</head>
 
 	<body class="h-screen overflow-hidden">
@@ -23,6 +40,21 @@
 
 			</div>
 		</div>
+
+		{{-- Script Modal Delete --}}
+		<script>
+			document.addEventListener('click', function(event) {
+				const trigger = event.target.closest('[data-delete-url]');
+				if (!trigger) return;
+
+				const form = document.getElementById('confirm-delete-form');
+				if (form) {
+					form.action = trigger.getAttribute('data-delete-url');
+				}
+			});
+		</script>
+
+		@stack('script')
 
 	</body>
 

@@ -4,6 +4,7 @@
 }
 @import 'flyonui/variants.css';
 @plugin "@iconify/tailwind4";
+@import "flyonui/src/vendor/notyf.css";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';

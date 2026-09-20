@@ -68,15 +68,40 @@
 		<!-- Delete Action Modal Trigger -->
 		<div class="mt-8 pt-4 border-t border-base-200 flex justify-end items-center">
 			@can('delete', $user)
-				<form action="{{ route('users.destroy', $user->id) }}" method="POST"
-					onsubmit="return confirm('Are you sure you want to delete this user?');">
-					@csrf
-					@method('DELETE')
-					<button type="submit" class="btn btn-error btn-outline btn-xs">
-						Delete User
-					</button>
-				</form>
+				<button type="button" class="btn btn-error btn-outline btn-xs" aria-haspopup="dialog" aria-expanded="false"
+					aria-controls="confirm-delete-modal" data-overlay="#confirm-delete-modal"
+					data-delete-url="{{ route('users.destroy', $user) }}">
+					Delete User
+				</button>
 			@endcan
+		</div>
+	</div>
+
+	<!-- Delete Confirmation Modal -->
+	<div id="confirm-delete-modal"
+		class="overlay modal overlay-open:opacity-100 overlay-open:duration-300 modal-middle hidden" role="dialog"
+		tabindex="-1">
+		<div class="modal-dialog modal-dialog-sm">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 class="modal-title">Delete User</h3>
+					<button type="button" class="btn btn-text btn-circle btn-sm absolute end-3 top-3" aria-label="Close"
+						data-overlay="#confirm-delete-modal">
+						<span class="icon-[tabler--x] size-4"></span>
+					</button>
+				</div>
+				<div class="modal-body">
+					Are you sure you want to delete this user? This action cannot be undone.
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-soft btn-secondary" data-overlay="#confirm-delete-modal">Cancel</button>
+					<form id="confirm-delete-form" method="POST">
+						@csrf
+						@method('DELETE')
+						<button type="submit" class="btn btn-error">Delete</button>
+					</form>
+				</div>
+			</div>
 		</div>
 	</div>
 @endsection

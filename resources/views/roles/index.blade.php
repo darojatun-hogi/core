@@ -10,14 +10,16 @@
 				</p>
 			</div>
 			<div class="flex gap-2">
-				@if (auth()->user()->hasRole('Super Admin'))
+				@can('managePermissions', \Spatie\Permission\Models\Role::class)
 					<button type="button" class="btn btn-secondary" aria-haspopup="dialog" aria-expanded="false"
 						aria-controls="permission-modal" data-overlay="#permission-modal">
 						<span class="icon-[tabler--key] size-4"></span>
 						Manage Permission
 					</button>
-				@endif
-				<a href="{{ route('roles.create') }}" class="btn btn-primary">Add New Role</a>
+				@endcan
+				@can('create', \Spatie\Permission\Models\Role::class)
+					<a href="{{ route('roles.create') }}" class="btn btn-primary">Add New Role</a>
+				@endcan
 			</div>
 		</div>
 
@@ -65,17 +67,20 @@
 									</td>
 									<td class="min-w-[200px] md:min-w-[280px]">
 										<div class="flex flex-row flex-wrap items-center justify-center gap-1.5">
-											<a href="{{ route('roles.show', $role) }}" class="btn btn-info btn-xs sm:btn-sm">Show</a>
+											@can('view', $role)
+												<a href="{{ route('roles.show', $role) }}" class="btn btn-info btn-xs sm:btn-sm">Show</a>
+											@endcan
 											@if ($role->name !== 'Super Admin')
-												<a href="{{ route('roles.edit', $role) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
-											@endif
-											@if ($role->name !== 'Super Admin')
-												<form action="{{ route('roles.destroy', $role) }}" method="POST"
-													onsubmit="return confirm('Are you sure?');" class="inline-block">
-													@csrf
-													@method('DELETE')
-													<button type="submit" class="btn btn-error btn-xs sm:btn-sm">Delete</button>
-												</form>
+												@can('update', $role)
+													<a href="{{ route('roles.edit', $role) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
+												@endcan
+												@can('delete', $role)
+													<button type="button" class="btn btn-error btn-xs sm:btn-sm" aria-haspopup="dialog" aria-expanded="false"
+														aria-controls="confirm-delete-modal" data-overlay="#confirm-delete-modal"
+														data-delete-url="{{ route('roles.destroy', $role) }}">
+														Delete
+													</button>
+												@endcan
 											@endif
 										</div>
 									</td>
@@ -96,7 +101,35 @@
 		@endif
 	</div>
 
-	@if (auth()->user()->hasRole('Super Admin'))
+	<!-- Delete Role Confirmation Modal -->
+	<div id="confirm-delete-modal"
+		class="overlay modal overlay-open:opacity-100 overlay-open:duration-300 modal-middle hidden" role="dialog"
+		tabindex="-1">
+		<div class="modal-dialog modal-dialog-sm">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 class="modal-title">Delete Role</h3>
+					<button type="button" class="btn btn-text btn-circle btn-sm absolute end-3 top-3" aria-label="Close"
+						data-overlay="#confirm-delete-modal">
+						<span class="icon-[tabler--x] size-4"></span>
+					</button>
+				</div>
+				<div class="modal-body">
+					Are you sure you want to delete this role? This action cannot be undone.
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-soft btn-secondary" data-overlay="#confirm-delete-modal">Cancel</button>
+					<form id="confirm-delete-form" method="POST">
+						@csrf
+						@method('DELETE')
+						<button type="submit" class="btn btn-error">Delete</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	@can('managePermissions', \Spatie\Permission\Models\Role::class)
 		{{-- Manage Permission Modal --}}
 		<div id="permission-modal" class="overlay modal overlay-open:opacity-100 overlay-open:duration-300 hidden"
 			role="dialog" tabindex="-1">
@@ -129,12 +162,10 @@
 										<tr>
 											<td>{{ $permission->name }}</td>
 											<td class="text-end">
-												<form action="{{ route('permissions.destroy', $permission) }}" method="POST"
-													onsubmit="return confirm('Delete this permission?');" class="inline-block">
-													@csrf
-													@method('DELETE')
-													<button type="submit" class="btn btn-error btn-xs">Delete</button>
-												</form>
+												<button type="button" class="btn btn-error btn-xs"
+													data-permission-delete-url="{{ route('permissions.destroy', $permission) }}">
+													Delete
+												</button>
 											</td>
 										</tr>
 									@endforeach
@@ -145,5 +176,66 @@
 				</div>
 			</div>
 		</div>
-	@endif
+
+		<!-- Delete Permission Confirmation Modal (sibling, bukan nested di dalam #permission-modal) -->
+		<div id="confirm-delete-permission-modal"
+			class="overlay modal overlay-open:opacity-100 overlay-open:duration-300 hidden" role="dialog" tabindex="-1">
+			<div class="modal-dialog modal-dialog-sm">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h3 class="modal-title">Delete Permission</h3>
+						<button type="button" class="btn btn-text btn-circle btn-sm absolute end-3 top-3" aria-label="Close"
+							data-overlay="#confirm-delete-permission-modal">
+							<span class="icon-[tabler--x] size-4"></span>
+						</button>
+					</div>
+					<div class="modal-body">
+						Are you sure you want to delete this permission? This action cannot be undone.
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-soft btn-secondary"
+							data-overlay="#confirm-delete-permission-modal">Cancel</button>
+						<form id="confirm-delete-permission-form" method="POST">
+							@csrf
+							@method('DELETE')
+							<button type="submit" class="btn btn-error">Delete</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Hidden trigger, dipakai JS untuk membuka modal ini secara terprogram -->
+		<button type="button" id="open-confirm-delete-permission-trigger" data-overlay="#confirm-delete-permission-modal"
+			class="hidden"></button>
+	@endcan
 @endsection
+
+@push('script')
+	<script>
+		document.addEventListener('click', function(event) {
+			const permissionDeleteTrigger = event.target.closest('[data-permission-delete-url]');
+			if (!permissionDeleteTrigger) return;
+
+			const permissionForm = document.getElementById('confirm-delete-permission-form');
+			if (permissionForm) {
+				permissionForm.action = permissionDeleteTrigger.getAttribute('data-permission-delete-url');
+			}
+
+			// Tutup modal "Manage Permission" dulu (klik tombol close bawaannya)
+			const closePermissionModalBtn = document.querySelector(
+				'#permission-modal [data-overlay="#permission-modal"]');
+			if (closePermissionModalBtn) {
+				closePermissionModalBtn.click();
+			}
+
+			// Beri jeda sedikit untuk animasi tutup, baru buka modal konfirmasi delete
+			setTimeout(function() {
+				const openConfirmTrigger = document.getElementById('open-confirm-delete-permission-trigger');
+				if (openConfirmTrigger) {
+					openConfirmTrigger.click();
+				}
+			}, 200);
+		});
+	</script>
+@endpush
