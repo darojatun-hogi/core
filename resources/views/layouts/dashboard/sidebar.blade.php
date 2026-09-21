@@ -22,22 +22,40 @@
 					<span class="overlay-minified:hidden">Home</span>
 				</a>
 			</li>
-			@can('users.view')
-				<li>
-					<a href="{{ route('users.index') }}" @class(['active' => request()->is('/users')])>
-						<span class="icon-[tabler--users] size-5"></span>
-						<span class="overlay-minified:hidden">User</span>
-					</a>
+			@canAny(['users.view', 'roles.manage'])
+				<li
+					class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:15] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]">
+					<button id="dropdown-default" type="button" class="dropdown-toggle" aria-haspopup="menu" aria-expanded="false"
+						aria-label="Dropdown">
+						<span class="icon-[tabler--apps] size-5"></span>
+						<span class="overlay-minified:hidden">Authorization</span>
+						<span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4 overlay-minified:hidden"></span>
+					</button>
+					<ul
+						class="dropdown-menu mt-0 shadow-none overlay-minified:shadow-md overlay-minified:shadow-base-300/20 dropdown-open:opacity-100 hidden min-w-60 overlay-minified:before:absolute overlay-minified:before:-start-4 overlay-minified:before:top-0 overlay-minified:before:h-full overlay-minified:before:w-4 before:bg-transparent"
+						role="menu" aria-orientation="vertical" aria-labelledby="dropdown-default">
+
+						@can('users.view')
+							<li>
+								<a href="{{ route('users.index') }}" @class(['active' => request()->is('/users')])>
+									<span class="icon-[tabler--users] size-5"></span>
+									<span class="overlay-minified:hidden">User</span>
+								</a>
+							</li>
+						@endcan
+
+						@can('roles.manage')
+							<li>
+								<a href="{{ route('roles.index') }}" @class(['active' => request()->is('/roles')])>
+									<span class="icon-[tabler--shield] size-5"></span>
+									<span class="overlay-minified:hidden">Roles & Permissions</span>
+								</a>
+							</li>
+						@endcan
+					</ul>
 				</li>
 			@endcan
-			@can('roles.manage')
-				<li>
-					<a href="{{ route('roles.index') }}" @class(['active' => request()->is('/roles')])>
-						<span class="icon-[tabler--shield] size-5"></span>
-						<span class="overlay-minified:hidden">Roles & Permissions</span>
-					</a>
-				</li>
-			@endcan
+
 			@can('activity-log.view')
 				<li>
 					<a href="{{ route('activity-log.index') }}" @class(['active' => request()->is('/activity-log')])>
@@ -46,6 +64,7 @@
 					</a>
 				</li>
 			@endcan
+
 			{{-- <li
 				class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:15] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]">
 				<button id="dropdown-default" type="button" class="dropdown-toggle" aria-haspopup="menu" aria-expanded="false"
