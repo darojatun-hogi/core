@@ -5,7 +5,7 @@
 		<h1 class="text-2xl font-semibold">Hello World</h1>
 
 		{{-- Hub SSO: daftar app yang bisa dibuka dengan akun yang sama --}}
-		@if (config('sso.hub'))
+		@if (config('sso.hub') && config('sso.apps'))
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				@foreach (config('sso.apps') as $app)
 					<a href="{{ $app['url'] }}" class="card bg-base-100 shadow-sm transition hover:shadow-md">

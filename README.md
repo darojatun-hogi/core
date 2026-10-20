@@ -15,11 +15,13 @@ Boilerplate Laravel untuk membangun aplikasi web dengan cepat, dilengkapi sistem
 ## Fitur yang Tersedia
 
 ### 1. Autentikasi & Role Management
-- Login, register, reset password (via email/Mailtrap)
+- Login (email atau username), register, verifikasi email, reset password via email (Mailgun di produksi, Mailtrap/log di lokal)
+- Cloudflare Turnstile di form login & register (aktif bila `TURNSTILE_SECRET_KEY` diisi)
 - Auth terpusat di Supabase: satu akun untuk semua app (lihat [Auth Terpusat](#auth-terpusat-supabase))
-- Role default: **super-admin** (semua app), **`<app>.admin`**, **`<app>.user`** (otomatis untuk user yang register)
+- Single Sign-On antar app `*.elips.id`: login sekali di `auth.elips.id`, semua app ikut login (lihat [SSO](#single-sign-on-sso))
+- Role default: **super-admin** (semua app), **`<app>.admin`**, **`<app>.user`** (otomatis saat user pertama kali membuka app, `ACCESS_AUTO_GRANT`)
 - Permission granular per-aksi (`view`, `create`, `edit`, `delete`) untuk tiap modul
-- Akses per app: login hanya bisa bila punya permission `<app>.access`
+- Akses per app: hanya user dengan permission `<app>.access`; tanpa akses tampil halaman 403
 - Middleware proteksi di Route, Blade (`@can`), dan Policy
 
 ### 2. User & Profile Management
@@ -102,6 +104,119 @@ Catatan:
 - **Redirect setelah login** hanya diizinkan ke domain `SSO_ALLOWED_DOMAIN` dan subdomainnya (default: dari `SESSION_DOMAIN`).
 - **Jangan simpan data terenkripsi** (`encrypted` cast, `Crypt::`) yang bergantung pada `APP_KEY` milik satu app, karena key dipakai bersama.
 - Key session bersifat global antar app: beri awalan nama app untuk data session milik app (mis. `money.tour_shown`).
+- **Turnstile**: satu widget dipakai semua app dengan hostname `elips.id` (berlaku untuk semua subdomain). App baru di `*.elips.id` tidak perlu menambah hostname.
+
+App yang sudah berjalan di VPS (`/var/www/laravel/<folder>`):
+
+| App | Domain | `APP_PORT` | Mode |
+|---|---|---|---|
+| core (folder `auth`) | auth.elips.id | 8084 | Hub (`SSO_HUB=true`, `ACCESS_APP=auth`) |
+| money | money.elips.id, elips.id | 8081 | Client |
+| clip | clip.elips.id | 8083 | Client |
+| portofolio | portfolio.elips.id | 8080 | Client (`sso.home` = `/admin`) |
+
+Port lain yang sudah terpakai: 8082 (movie), 5678 (n8n), 3306 (MySQL), 20128 (9router). Pilih port baru (mis. 8085) untuk app berikutnya.
+
+## Membuat Project Baru dari Core
+
+Pilih salah satu mode, lalu ikuti langkahnya. Detail tiap langkah server ada di [Deployment Environment Setup](#deployment-environment-setup).
+
+| | A. Dengan SSO (direkomendasikan) | B. Tanpa SSO (standalone) |
+|---|---|---|
+| Domain | Subdomain `*.elips.id` | Domain apa saja |
+| Halaman login/register | Di hub `auth.elips.id` | Di app itu sendiri |
+| Akun | Satu akun Supabase untuk semua app | Tetap satu tabel users Supabase, tapi login terpisah |
+| Session | Bersama semua app (`elips_session`) | Milik app sendiri |
+| `.env` kunci | `SSO_HUB=false`, `APP_KEY` sama dengan app lain | `SSO_HUB=true`, `APP_KEY` baru |
+
+### A. Project baru dengan SSO
+
+1. **Clone & install**
+   ```bash
+   git clone https://github.com/darojatun-hogi/core.git nama-app
+   cd nama-app
+   rm -rf .git && git init          # repo baru, tanpa histori core
+   composer install
+   bun install
+   cp .env.example .env
+   ```
+2. **`.env` lokal**
+   ```env
+   APP_NAME=nama-app
+   APP_KEY=                 # salin APP_KEY dari .env lokal core/app lain (cookie session harus bisa dibaca)
+   APP_URL=http://localhost:8001
+   ACCESS_APP=namaapp       # huruf kecil, awalan role/permission
+
+   SSO_HUB=false
+   SSO_HUB_URL=http://localhost:8000   # core lokal yang dijalankan sebagai hub
+   SESSION_COOKIE=elips_session
+   SESSION_DOMAIN=null                 # cookie localhost berlaku lintas port
+   ```
+   Isi juga `DB_*` dan `SUPABASE_DB_*` seperti di [Instalasi](#instalasi-local-development).
+3. **Jalankan hub lokal**: di folder core, set `SSO_HUB=true`, `APP_URL=http://localhost:8000`, `APP_KEY` dan `SESSION_COOKIE` yang sama, lalu `php artisan serve --port=8000`. Login di app baru (`php artisan serve --port=8001`) akan diarahkan ke hub ini.
+   > Cara cepat tanpa hub: set sementara `SSO_HUB=true` di app baru sehingga halaman login ada di app itu sendiri. Kembalikan ke `false` sebelum commit `.env.example`/deploy.
+4. **Migration & seeder**: `php artisan migrate --seed`.
+5. **Sesuaikan app**:
+   - `config/sso.php` → `home` bila halaman awal app bukan `/dashboard`.
+   - `database/seeders/AppAccessSeeder.php` → `$appPermissions` dan `$userPermissions`.
+   - `ACCESS_AUTO_GRANT=false` di `.env` bila akses app harus diberikan admin.
+6. **Daftarkan app di hub** (repo core): tambah entri di `config/sso.php` → `apps` supaya muncul di dashboard `auth.elips.id`, lalu push core.
+7. **GitHub**: buat repo baru, ganti nama image di `docker-compose.prod.yml` (`ghcr.io/darojatun-hogi/<repo>-app`, `-nginx`), isi secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_PROJECT_PATH` (lihat [2.3](#23-isi-github-secrets-pada-directory-setting-per-project)).
+8. **VPS**: buat folder `/var/www/laravel/<folder>` berisi `docker-compose.prod.yml` dan `.env` produksi (lihat [3.2](#32-update-file-env-setting-per-project)). Untuk mode SSO:
+   ```env
+   APP_KEY=                 # salin dari /var/www/laravel/money/.env (JANGAN key:generate)
+   SSO_HUB=false
+   SSO_HUB_URL=https://auth.elips.id
+   SESSION_COOKIE=elips_session
+   SESSION_DOMAIN=.elips.id
+   SESSION_SECURE_COOKIE=true
+   SESSION_LIFETIME=120
+   APP_PORT=8085            # port belum terpakai
+   ```
+   Buat database MySQL-nya: `docker exec -it shared-mysql mysql -uroot -p -e "CREATE DATABASE nama_db"`.
+9. **Tunnel & DNS**: tambah ingress `nama-app.elips.id → http://localhost:<APP_PORT>` **di atas** baris `http_status:404`, lalu `cloudflared tunnel route dns <tunnel> nama-app.elips.id` dan `sudo systemctl restart cloudflared` (lihat [4](#4-setting-cloudflared-tunnel)).
+10. **Deploy**: push ke `master`. Setelah sukses, sekali saja:
+    ```bash
+    docker exec <app>-app php artisan db:seed --class=AppAccessSeeder --force
+    ```
+11. **Cek**: buka `https://nama-app.elips.id/login` → harus diarahkan ke `auth.elips.id/login?redirect=...`. Bila sudah login di app lain, app baru langsung terbuka.
+
+### B. Project baru tanpa SSO (standalone)
+
+Dipakai bila app di luar `*.elips.id` atau sengaja tidak ikut login bersama. App menjalankan halaman login/register/verifikasi/reset password sendiri (mode hub), tetapi akun tetap di tabel users Supabase.
+
+1. **Clone & install**: sama dengan langkah A.1, lalu `php artisan key:generate` (APP_KEY milik app sendiri).
+2. **`.env` lokal**
+   ```env
+   APP_NAME=nama-app
+   ACCESS_APP=namaapp
+   SSO_HUB=true                       # halaman auth ada di app ini
+   SESSION_COOKIE=namaapp_session     # jangan elips_session
+   SESSION_DOMAIN=null
+   ACCESS_AUTO_GRANT=false            # opsional: akses hanya dari admin
+   TURNSTILE_SITE_KEY=                # kosongkan di lokal
+   TURNSTILE_SECRET_KEY=
+   ```
+3. **Kosongkan daftar app hub**: di `config/sso.php` set `'apps' => []` supaya dashboard tidak menampilkan kartu app Elips.
+4. **Migration & seeder, sesuaikan app**: sama dengan langkah A.4 dan A.5.
+5. **GitHub**: sama dengan langkah A.7.
+6. **VPS**: `.env` produksi seperti [3.2](#32-update-file-env-setting-per-project), dengan:
+   ```env
+   APP_KEY=                 # key baru milik app ini
+   SSO_HUB=true
+   SESSION_COOKIE=namaapp_session
+   SESSION_DOMAIN=null      # atau domain app itu sendiri
+   SESSION_SECURE_COOKIE=true
+   MAIL_MAILER=mailgun      # wajib: email verifikasi & reset password dikirim dari app ini
+   MAILGUN_DOMAIN=
+   MAILGUN_SECRET=
+   MAIL_FROM_ADDRESS=
+   TURNSTILE_SITE_KEY=      # widget Turnstile dengan hostname domain app
+   TURNSTILE_SECRET_KEY=
+   APP_PORT=8085
+   ```
+7. **Tunnel, deploy, seeder**: sama dengan langkah A.9 dan A.10. Bila domain bukan `*.elips.id`, tambahkan hostname-nya di widget Turnstile.
+8. **Cek**: `https://domain-app/login` menampilkan form login milik app (tidak redirect ke `auth.elips.id`).
 
 ## Instalasi (Local Development)
 
@@ -169,6 +284,12 @@ php artisan serve
 bun run dev
 ```
 
+Menjalankan test (koneksi Supabase diganti SQLite in-memory di `tests/TestCase.php`, tidak menyentuh data pusat). Bila PHP lokal belum memuat `pdo_sqlite`/`gd`, jalankan PHPUnit langsung dengan flag ekstensi:
+
+```bash
+php -d extension=pdo_sqlite -d extension=gd vendor/bin/phpunit
+```
+
 **Akun default setelah seeding** (hanya dibuat bila tabel users di Postgres masih kosong, mis. dev lokal pertama kali):
 | Role | Email | Password |
 |---|---|---|
@@ -190,7 +311,7 @@ users.*, roles.*, permissions.*, activity-log.view   # identitas bersama semua a
 |---|---|
 | `super-admin` | Semua akses di semua app (lewat `Gate::before`) |
 | `<app>.admin` | `<app>.access` + semua permission app + identitas bersama |
-| `<app>.user` | `<app>.access` + permission di `$userPermissions`; diberikan otomatis saat register |
+| `<app>.user` | `<app>.access` + permission di `$userPermissions`; diberikan otomatis saat user pertama kali membuka app (`ACCESS_AUTO_GRANT=true`) |
 
 ## Menambah Modul CRUD Baru
 
@@ -241,7 +362,7 @@ Pola CRUD di boilerplate ini mengikuti struktur standar berikut (contoh nama mod
 
 4. **Routes**
    ```php
-   // Di dalam grup yang sudah ada: Route::middleware(['auth', 'app.access'])
+   // Di dalam grup yang sudah ada: Route::middleware(['auth', 'app.access', 'verified'])
    Route::resource('items', ItemController::class);
    ```
 
@@ -308,8 +429,9 @@ Dokumentasi setup environment untuk deployment project (Local, Git, dan Server).
 
 ```env
 APP_NAME=
-APP_KEY=            # php artisan key:generate
+APP_KEY=            # SSO: salin dari app lain; standalone: php artisan key:generate
 ACCESS_APP=         # nama app, huruf kecil
+SSO_HUB=false       # lihat "Membuat Project Baru dari Core"
 
 DB_HOST=shared-mysql
 DB_PORT=3306
@@ -433,9 +555,23 @@ SUPABASE_DB_SSLMODE=require
 # SSO: salin APP_KEY dari app lain dan isi nilai yang sama dengan app lain (lihat bagian SSO)
 SESSION_COOKIE=elips_session
 SESSION_DOMAIN=.elips.id
+SESSION_SECURE_COOKIE=true
+SSO_HUB=false       # true hanya untuk hub (auth.elips.id) atau app standalone
 SSO_HUB_URL=https://auth.elips.id
-APP_PORT=           # port host untuk nginx, beda per app (mis. 8084)
+APP_PORT=           # port host untuk nginx, beda per app (lihat tabel di bagian SSO)
+
+# Email & Turnstile: wajib untuk hub/standalone (SSO_HUB=true), salin dari /var/www/laravel/auth/.env
+MAIL_MAILER=mailgun
+MAILGUN_DOMAIN=elips.id
+MAILGUN_SECRET=
+MAILGUN_ENDPOINT=api.mailgun.net
+MAIL_FROM_ADDRESS="no-reply@elips.id"
+MAIL_FROM_NAME=Elips
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
 ```
+
+> Tip: cara paling aman membuat `.env` produksi baru adalah menyalin `.env` app lain di server lalu mengganti `APP_NAME`, `APP_URL`, `ACCESS_APP`, `DB_DATABASE`, dan `APP_PORT`. Pastikan file diakhiri baris kosong sebelum menambah variabel dengan `echo >>`.
 
 Setelah deploy pertama: `docker exec <app>-app php artisan db:seed --class=AppAccessSeeder --force`.
 
@@ -461,11 +597,19 @@ Setelah deploy pertama: `docker exec <app>-app php artisan db:seed --class=AppAc
    docker compose -f docker-compose.prod.yml ps
    ```
 
-2. Setup awal Laravel (dilakukan sekali saja per deployment baru):
+2. Setup awal Laravel (dilakukan sekali saja per deployment baru). `migrate` sudah dijalankan workflow deploy; yang perlu manual hanya seeder akses app:
    ```bash
-   docker compose -f docker-compose.prod.yml exec app php artisan key:generate
-   docker compose -f docker-compose.prod.yml exec app php artisan migrate --force
+   docker compose -f docker-compose.prod.yml exec app php artisan db:seed --class=AppAccessSeeder --force
    ```
+   Jangan jalankan `key:generate` untuk app SSO: `APP_KEY` harus sama dengan app lain. `key:generate` hanya untuk app standalone, dan isi `APP_KEY` di `.env` sebelum deploy (bukan di dalam container, karena `.env` dibaca dari folder server).
+
+3. Bila setelah mengubah `.env` app perlu dimuat ulang tanpa deploy:
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --force-recreate
+   docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache
+   ```
+
+4. Bila job **deploy** di GitHub Actions gagal dalam beberapa detik tanpa koneksi masuk ke VPS, periksa ulang secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` (isi ulang; GitHub tidak menampilkan nilainya), lalu push ulang atau **Re-run failed jobs**.
 
 ---
 
@@ -486,7 +630,7 @@ Setelah deploy pertama: `docker exec <app>-app php artisan db:seed --class=AppAc
 5. Buat file baru dengan nama `config.yml` yang berisi:
    ```yaml
    tunnel: {key-file} # copy dari step 3
-   credential-file: /home/{user-vps}/.cloudflared/{key-file}.json # sesuaikan user-vps & key-file dari step 3
+   credentials-file: /home/{user-vps}/.cloudflared/{key-file}.json # sesuaikan user-vps & key-file dari step 3
 
    ingress:
      - hostname: domain-mu.com # contoh: example.com
@@ -522,3 +666,20 @@ Setelah deploy pertama: `docker exec <app>-app php artisan db:seed --class=AppAc
    - `~/.cloudflared` atau `/home/{user-vps}/.cloudflared`
 
 2. Port service pada step 5 (bagian kiri `service: http://localhost:80`) bisa disesuaikan dengan konfigurasi di file `docker-compose.prod.yml`.
+
+### Menambah app baru ke tunnel yang sudah ada
+
+Server ini sudah punya tunnel (`/etc/cloudflared/config.yml`, salinannya di `~/.cloudflared/config.yml`). Untuk app baru:
+
+1. Backup lalu tambahkan ingress **di atas** baris terakhir `- service: http_status:404`:
+   ```yaml
+     - hostname: nama-app.elips.id
+       service: http://localhost:8085   # APP_PORT app
+   ```
+2. Validasi, daftarkan DNS, dan restart:
+   ```bash
+   sudo cloudflared tunnel --config /etc/cloudflared/config.yml ingress validate
+   cloudflared tunnel route dns <tunnel-id> nama-app.elips.id
+   sudo systemctl restart cloudflared
+   ```
+3. Samakan salinan di `~/.cloudflared/config.yml` dengan `/etc/cloudflared/config.yml`.
