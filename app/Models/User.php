@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -14,7 +17,7 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\Models\Activity;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable, HasRoles, LogsActivity;
 
@@ -63,6 +66,38 @@ class User extends Authenticatable
                 $user->assignRole(Role::appPrefix() . 'user');
             }
         });
+    }
+
+    // Email verifikasi & reset password hanya dikirim dari hub SSO, jadi link-nya selalu ke hub
+    public function sendEmailVerificationNotification(): void
+    {
+        VerifyEmail::toMailUsing(fn ($notifiable, string $url) => (new MailMessage)
+            ->subject('Verifikasi Alamat Email Anda')
+            ->view('mail.verify-email', ['url' => $url, 'user' => $notifiable]));
+
+        parent::sendEmailVerificationNotification();
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        ResetPassword::toMailUsing(fn ($notifiable, string $token) => (new MailMessage)
+            ->subject('Reset Password Akun Anda')
+            ->view('mail.reset-password', [
+                'url' => route('password.reset', ['token' => $token, 'email' => $notifiable->getEmailForPasswordReset()]),
+                'user' => $notifiable,
+            ]));
+
+        parent::sendPasswordResetNotification($token);
+    }
+
+    // super-admin dan admin app ini tidak wajib verifikasi email
+    public function hasVerifiedEmail(): bool
+    {
+        if ($this->hasAnyRole([config('access.super_admin_role'), Role::appPrefix().'admin'])) {
+            return true;
+        }
+
+        return ! is_null($this->email_verified_at);
     }
 
     public static function notifiableAdmins(?User $except = null)

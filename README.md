@@ -75,6 +75,34 @@ Aturan yang perlu diikuti:
 - **Validasi** ke tabel auth menyebut koneksi: `unique:supabase.users,email`, `Rule::unique('supabase.users', 'email')`. Pencarian ke tabel Supabase memakai `ilike` (Postgres membedakan huruf besar/kecil).
 - **Migration tabel pusat idempoten**: dilewati bila tabel sudah ada, dan `down()` kosong supaya `migrate:rollback` di satu app tidak menghapus data pusat. RLS diaktifkan otomatis untuk menutup akses REST API publik Supabase.
 
+## Single Sign-On (SSO)
+
+Semua app di `*.elips.id` memakai satu session: login sekali di satu app, app lain langsung ikut login. Logout di satu app juga keluar dari semua app.
+
+| Mode | `.env` | Peran |
+|---|---|---|
+| Hub | `SSO_HUB=true` | Hanya `auth.elips.id` (deploy dari repo core ini). Menangani login & register (Cloudflare Turnstile), verifikasi email, reset password, dan menampilkan daftar app (`config/sso.php`). |
+| Client | `SSO_HUB=false` (default) | Semua app lain, termasuk project baru hasil clone core. Route `login`, `register`, `password.request`, `verification.notice` diarahkan ke hub lalu kembali ke halaman asal (`?redirect=`). |
+
+Syarat agar session terbaca di semua app (nilai **wajib sama** di setiap `.env`):
+
+```env
+APP_KEY=                         # salin dari app lain, cookie session dienkripsi dengan key ini
+SESSION_DRIVER=database          # tabel sessions di Supabase
+SESSION_COOKIE=elips_session
+SESSION_DOMAIN=.elips.id         # produksi; dev lokal: null (cookie localhost berlaku lintas port)
+SESSION_LIFETIME=120
+SSO_HUB_URL=https://auth.elips.id
+```
+
+Catatan:
+
+- **Akses app**: user yang membuka app untuk pertama kali otomatis diberi role `<app>.user` (`ACCESS_AUTO_GRANT=true`). Set `false` bila akses harus diberikan admin; user tanpa akses melihat halaman 403 (tidak di-logout, karena session dipakai bersama).
+- **Verifikasi email** berlaku di semua app (`users.email_verified_at`). Route yang butuh email terverifikasi memakai middleware `verified`; super-admin dan `<app>.admin` dikecualikan.
+- **Redirect setelah login** hanya diizinkan ke domain `SSO_ALLOWED_DOMAIN` dan subdomainnya (default: dari `SESSION_DOMAIN`).
+- **Jangan simpan data terenkripsi** (`encrypted` cast, `Crypt::`) yang bergantung pada `APP_KEY` milik satu app, karena key dipakai bersama.
+- Key session bersifat global antar app: beri awalan nama app untuk data session milik app (mis. `money.tour_shown`).
+
 ## Instalasi (Local Development)
 
 ```bash
@@ -401,6 +429,12 @@ SUPABASE_DB_DATABASE=postgres
 SUPABASE_DB_USERNAME=
 SUPABASE_DB_PASSWORD=
 SUPABASE_DB_SSLMODE=require
+
+# SSO: salin APP_KEY dari app lain dan isi nilai yang sama dengan app lain (lihat bagian SSO)
+SESSION_COOKIE=elips_session
+SESSION_DOMAIN=.elips.id
+SSO_HUB_URL=https://auth.elips.id
+APP_PORT=           # port host untuk nginx, beda per app (mis. 8084)
 ```
 
 Setelah deploy pertama: `docker exec <app>-app php artisan db:seed --class=AppAccessSeeder --force`.

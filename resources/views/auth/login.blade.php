@@ -61,6 +61,18 @@
 			@endif
 		</div>
 
+		{{-- Cloudflare Turnstile (aktif bila TURNSTILE_SITE_KEY diisi) --}}
+		@if (config('services.turnstile.site_key'))
+			<div class="form-control w-full">
+				<div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}"></div>
+				@error('cf-turnstile-response')
+					<span class="label-text-alt text-error mt-1.5 block">
+						{{ $message }}
+					</span>
+				@enderror
+			</div>
+		@endif
+
 		{{-- Submit --}}
 		<button type="submit" class="btn btn-primary w-full mt-2">
 			Login

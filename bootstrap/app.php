@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Di belakang Cloudflare Tunnel + nginx: pakai skema/host asli supaya URL (link verifikasi, redirect SSO) https
+        $middleware->trustProxies(at: '*');
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,

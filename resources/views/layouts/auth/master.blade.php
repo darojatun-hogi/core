@@ -7,6 +7,9 @@
 		<title>Login</title>
 
 		@vite(['resources/css/app.css', 'resources/js/app.js'])
+		@if (config('services.turnstile.site_key'))
+			<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+		@endif
 		@if (session('success'))
 			<script>
 				window.addEventListener('load', function() {

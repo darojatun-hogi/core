@@ -12,6 +12,9 @@ return [
 
     'super_admin_role' => 'super-admin',
 
+    // SSO: user yang sudah login (di app lain) otomatis diberi role "<app>.user" saat pertama membuka app ini
+    'auto_grant' => (bool) env('ACCESS_AUTO_GRANT', true),
+
     // Opsional: akun yang otomatis diberi role "<app>.admin" oleh AppAccessSeeder
     'admin_email' => env('APP_ADMIN_EMAIL'),
 

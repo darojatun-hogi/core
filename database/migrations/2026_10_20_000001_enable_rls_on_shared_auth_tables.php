@@ -19,6 +19,11 @@ return new class extends Migration
 
     public function up(): void
     {
+        // RLS hanya ada di Postgres; test memakai SQLite untuk koneksi supabase
+        if (DB::connection($this->connection)->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         foreach ($this->existingTables() as $table) {
             DB::connection($this->connection)->statement("ALTER TABLE public.\"$table\" ENABLE ROW LEVEL SECURITY");
         }

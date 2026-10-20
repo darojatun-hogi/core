@@ -10,17 +10,43 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\SsoController;
 
-Route::get('/',[AuthController::class, 'login'])->name('root');
-Route::get('login', [AuthController::class, 'login'])->name('login');
-Route::post('login',[AuthController::class, 'authenticate'])->name('login.authenticate');
+// SSO: hub (SSO_HUB=true) menangani login/register/verifikasi/reset password untuk semua app,
+// app client hanya meneruskan route bernama sama ke hub (lihat config/sso.php)
+if (config('sso.hub')) {
+    Route::get('/',[AuthController::class, 'login'])->name('root');
+    Route::get('login', [AuthController::class, 'login'])->name('login');
+    Route::post('login',[AuthController::class, 'authenticate'])->middleware('throttle:10,1')->name('login.authenticate');
 
-Route::get('register',[AuthController::class, 'register'])->name('register');
-Route::post('register',[AuthController::class, 'store'])->name('register.store');
+    Route::get('register',[AuthController::class, 'register'])->name('register');
+    Route::post('register',[AuthController::class, 'store'])->middleware('throttle:5,1')->name('register.store');
 
-Route::post('logout',[AuthController::class, 'logout'])->name('logout');
+    Route::post('logout',[AuthController::class, 'logout'])->name('logout');
 
-Route::middleware(['auth', 'app.access'])->group(function () {
+    Route::middleware('auth')->group(function () {
+        Route::get('email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+        Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+        Route::post('email/verification-notification', [EmailVerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send');
+    });
+
+    Route::middleware('guest')->group(function () {
+        Route::get('forgot-password', [PasswordResetController::class, 'create'])->name('password.request');
+        Route::post('forgot-password', [PasswordResetController::class, 'store'])->middleware('throttle:3,1')->name('password.email');
+        Route::get('reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+        Route::post('reset-password', [PasswordResetController::class, 'update'])->name('password.update');
+    });
+} else {
+    Route::redirect('/', '/dashboard')->name('root');
+    Route::get('login', [SsoController::class, 'login'])->name('login');
+    Route::get('register', [SsoController::class, 'register'])->name('register');
+    Route::get('forgot-password', [SsoController::class, 'forgotPassword'])->name('password.request');
+    Route::get('email/verify', [SsoController::class, 'verifyEmail'])->middleware('auth')->name('verification.notice');
+    Route::post('logout', [SsoController::class, 'logout'])->name('logout');
+}
+
+Route::middleware(['auth', 'app.access', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('users',UserController::class);
     Route::resource('roles', RoleController::class);
@@ -35,11 +61,4 @@ Route::middleware(['auth', 'app.access'])->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
-});
-
-Route::middleware('guest')->group(function () {
-    Route::get('forgot-password', [PasswordResetController::class, 'create'])->name('password.request');
-    Route::post('forgot-password', [PasswordResetController::class, 'store'])->name('password.email');
-    Route::get('reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
-    Route::post('reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 });
