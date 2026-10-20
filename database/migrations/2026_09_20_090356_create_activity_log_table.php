@@ -6,8 +6,13 @@ use Illuminate\Database\Migrations\Migration;
 
 class CreateActivityLogTable extends Migration
 {
+    // Tabel pusat di Supabase (dipakai semua app): dilewati bila sudah ada, tidak di-drop saat rollback
     public function up()
     {
+        if (Schema::connection(config('activitylog.database_connection'))->hasTable(config('activitylog.table_name'))) {
+            return;
+        }
+
         Schema::connection(config('activitylog.database_connection'))->create(config('activitylog.table_name'), function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('log_name')->nullable();
@@ -22,6 +27,6 @@ class CreateActivityLogTable extends Migration
 
     public function down()
     {
-        Schema::connection(config('activitylog.database_connection'))->dropIfExists(config('activitylog.table_name'));
+        // Tabel pusat: tidak di-drop dari app mana pun
     }
 }

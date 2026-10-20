@@ -71,7 +71,7 @@
 				<button type="button" class="btn btn-error btn-outline btn-xs" aria-haspopup="dialog" aria-expanded="false"
 					aria-controls="confirm-delete-modal" data-overlay="#confirm-delete-modal"
 					data-delete-url="{{ route('users.destroy', $user) }}">
-					Delete User
+					Cabut akses
 				</button>
 			@endcan
 		</div>
@@ -84,21 +84,21 @@
 		<div class="modal-dialog modal-dialog-sm">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h3 class="modal-title">Delete User</h3>
+					<h3 class="modal-title">Cabut akses</h3>
 					<button type="button" class="btn btn-text btn-circle btn-sm absolute end-3 top-3" aria-label="Close"
 						data-overlay="#confirm-delete-modal">
 						<span class="icon-[tabler--x] size-4"></span>
 					</button>
 				</div>
 				<div class="modal-body">
-					Are you sure you want to delete this user? This action cannot be undone.
+					Cabut akses user ini ke aplikasi ini? Akun dan aksesnya di aplikasi lain tetap ada.
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-soft btn-secondary" data-overlay="#confirm-delete-modal">Cancel</button>
 					<form id="confirm-delete-form" method="POST">
 						@csrf
 						@method('DELETE')
-						<button type="submit" class="btn btn-error">Delete</button>
+						<button type="submit" class="btn btn-error">Cabut akses</button>
 					</form>
 				</div>
 			</div>

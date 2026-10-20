@@ -21,8 +21,8 @@ class ProfileUpdateRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('users', 'username')->ignore($userId)],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
+            'username' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('supabase.users', 'username')->ignore($userId)],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('supabase.users', 'email')->ignore($userId)],
         ];
     }
 }

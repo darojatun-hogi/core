@@ -16,10 +16,11 @@ Boilerplate Laravel untuk membangun aplikasi web dengan cepat, dilengkapi sistem
 
 ### 1. Autentikasi & Role Management
 - Login, register, reset password (via email/Mailtrap)
-- 3 role default: **Super Admin**, **Admin**, **User**
+- Auth terpusat di Supabase: satu akun untuk semua app (lihat [Auth Terpusat](#auth-terpusat-supabase))
+- Role default: **super-admin** (semua app), **`<app>.admin`**, **`<app>.user`** (otomatis untuk user yang register)
 - Permission granular per-aksi (`view`, `create`, `edit`, `delete`) untuk tiap modul
+- Akses per app: login hanya bisa bila punya permission `<app>.access`
 - Middleware proteksi di Route, Blade (`@can`), dan Policy
-- Proteksi privilege escalation untuk Super Admin
 
 ### 2. User & Profile Management
 - CRUD User dengan permission granular
@@ -53,6 +54,27 @@ Boilerplate Laravel untuk membangun aplikasi web dengan cepat, dilengkapi sistem
   ```
 - **Toast notification** — session flash (`success`, `error`, `info`) dibaca sekali di `layouts.dashboard.master`, otomatis tampil via Notyf di halaman manapun tanpa perlu setup ulang per halaman.
 
+## Auth Terpusat (Supabase)
+
+Semua app turunan core memakai satu database auth bersama, sedangkan data bisnis tiap app tetap di MySQL masing-masing.
+
+| Koneksi | Database | Isi |
+|---|---|---|
+| `mysql` (default) | MySQL per app | Tabel bisnis app, `migrations`, cache, jobs |
+| `supabase` | Postgres pusat (Supabase di produksi, `shared-postgres` di lokal) | users, roles, permissions, model_has_*, role_has_permissions, sessions, password_reset_tokens, activity_log, notifications |
+
+Aturan yang perlu diikuti:
+
+- **Nama app** diatur lewat `ACCESS_APP` (`config/access.php`). Semua role/permission milik app berawalan `<app>.`, `log_name` activity log dan kolom `app` di notifikasi juga memakai nama ini.
+- **Permission** format `resource.action`. Milik app: `<app>.items.view`. Identitas bersama tanpa awalan: `users.*`, `roles.*`, `permissions.*`, `activity-log.view`.
+- **Role**: `super-admin` berlaku di semua app (`Gate::before`, tanpa daftar permission). Tiap app punya `<app>.admin` dan `<app>.user`.
+- **Akses app**: middleware `app.access` menolak user tanpa `<app>.access`. Halaman Users/Roles hanya menampilkan user dan role milik app ini (`User::withAppAccess()`, `Role::forApp()`).
+- **Jangan hapus akun dari app**: tombol "Cabut akses" mencabut role `<app>.*` saja. Ubah role selalu lewat `$user->syncAppRoles([...])` agar role app lain tidak ikut hilang.
+- **Model bisnis wajib `protected $connection = 'mysql';`**. Relasi dari model Supabase (mis. subject activity log) mewarisi koneksi induknya bila model relasi tidak menetapkan koneksi sendiri.
+- **Tanpa foreign key ke `users`** di tabel MySQL (beda database): pakai `$table->foreignId('user_id')->index();`. Hindari `join`/`whereHas` antara model `supabase` dan `mysql`; pakai eager loading.
+- **Validasi** ke tabel auth menyebut koneksi: `unique:supabase.users,email`, `Rule::unique('supabase.users', 'email')`. Pencarian ke tabel Supabase memakai `ilike` (Postgres membedakan huruf besar/kecil).
+- **Migration tabel pusat idempoten**: dilewati bila tabel sudah ada, dan `down()` kosong supaya `migrate:rollback` di satu app tidak menghapus data pusat. RLS diaktifkan otomatis untuk menutup akses REST API publik Supabase.
+
 ## Instalasi (Local Development)
 
 ```bash
@@ -70,12 +92,21 @@ Sesuaikan `.env`:
 
 ```env
 APP_NAME=NamaProjectBaru
+ACCESS_APP=namaapp            # huruf kecil, dipakai sebagai awalan role/permission
 
 DB_HOST=shared-mysql
 DB_PORT=3306
 DB_DATABASE=nama_database
 DB_USERNAME=root
 DB_PASSWORD=
+
+# Lokal: Postgres dari shared-services. Produksi: isi kredensial Supabase (session pooler) dan SUPABASE_DB_SSLMODE=require
+SUPABASE_DB_HOST=shared-postgres
+SUPABASE_DB_PORT=5432
+SUPABASE_DB_DATABASE=postgres
+SUPABASE_DB_USERNAME=postgres
+SUPABASE_DB_PASSWORD=
+SUPABASE_DB_SSLMODE=disable
 
 MAIL_MAILER=smtp
 MAIL_HOST=sandbox.smtp.mailtrap.io
@@ -84,11 +115,24 @@ MAIL_USERNAME=
 MAIL_PASSWORD=
 ```
 
-Jalankan migration & seeder:
+Pastikan container `shared-postgres` (folder `shared-services`) berjalan, lalu jalankan migration & seeder:
 
 ```bash
 php artisan migrate --seed
 ```
+
+`migrate` membuat tabel bisnis di MySQL dan hanya membuat tabel pusat di Postgres bila belum ada. `--seed` menjalankan `AppAccessSeeder` (role & permission app ini) dan `UserSeeder` (akun admin, hanya bila tabel users masih kosong).
+
+### Saat app pertama kali dipasang di produksi
+
+Tabel users di Supabase sudah berisi akun, jadi cukup:
+
+```bash
+php artisan migrate --force
+php artisan db:seed --class=AppAccessSeeder --force
+```
+
+Akun `super-admin` langsung bisa masuk. Untuk akun lain, isi `APP_ADMIN_EMAIL` sebelum seeding, atau beri role `<app>.admin`/`<app>.user` dari halaman Users app lain yang sudah punya akses. Pastikan image Docker memasang `pdo_pgsql` (sudah ada di `docker/php/Dockerfile`).
 
 Jalankan development server:
 
@@ -97,24 +141,28 @@ php artisan serve
 bun run dev
 ```
 
-**Akun default setelah seeding:**
+**Akun default setelah seeding** (hanya dibuat bila tabel users di Postgres masih kosong, mis. dev lokal pertama kali):
 | Role | Email | Password |
 |---|---|---|
-| Super Admin | admin@example.com | admin123 |
+| super-admin | admin@example.com | admin123 |
 
-> Ganti password ini segera setelah setup project baru.
+> Ganti password ini segera. Di produksi akun ini tidak dibuat karena tabel users pusat sudah berisi.
 
 ## Struktur Permission
 
-Permission didefinisikan di `database/seeders/RolePermissionSeeder.php`, mengikuti pola `<modul>.<aksi>`:
+Permission didaftarkan oleh `database/seeders/AppAccessSeeder.php`, mengikuti pola `resource.action`:
 
 ```
-users.view, users.create, users.edit, users.delete
-roles.manage
-activity-log.view
+<app>.access                                   # syarat login ke app ini
+<app>.<modul>.view|create|edit|delete          # permission fitur app (isi $appPermissions)
+users.*, roles.*, permissions.*, activity-log.view   # identitas bersama semua app
 ```
 
-Role **Admin** dan **Super Admin** memiliki seluruh permission secara default. Role **User** tidak memiliki permission khusus (hanya akses dasar).
+| Role | Isi |
+|---|---|
+| `super-admin` | Semua akses di semua app (lewat `Gate::before`) |
+| `<app>.admin` | `<app>.access` + semua permission app + identitas bersama |
+| `<app>.user` | `<app>.access` + permission di `$userPermissions`; diberikan otomatis saat register |
 
 ## Menambah Modul CRUD Baru
 
@@ -133,6 +181,9 @@ Pola CRUD di boilerplate ini mengikuti struktur standar berikut (contoh nama mod
    class Item extends Model
    {
        use LogsActivity;
+
+       // Wajib: data bisnis di MySQL (lihat Auth Terpusat)
+       protected $connection = 'mysql';
 
        public function getActivitylogOptions(): LogOptions
        {
@@ -154,15 +205,16 @@ Pola CRUD di boilerplate ini mengikuti struktur standar berikut (contoh nama mod
    }
    ```
 
+   Di migration, kolom pemilik data cukup `$table->foreignId('user_id')->index();` tanpa `constrained()`.
+
 2. **Form Request** — buat `ItemStoreRequest` dan `ItemUpdateRequest` untuk validasi.
 
 3. **Controller** — implementasikan `index` (dengan search + pagination), `create`, `store`, `edit`, `update`, `destroy` mengikuti pola resource controller.
 
 4. **Routes**
    ```php
-   Route::middleware('auth')->group(function () {
-       Route::resource('items', ItemController::class);
-   });
+   // Di dalam grup yang sudah ada: Route::middleware(['auth', 'app.access'])
+   Route::resource('items', ItemController::class);
    ```
 
 5. **View** — buat `index.blade.php`, `create.blade.php`, `edit.blade.php` di `resources/views/items/`, `@extends('layouts.dashboard.master')`. Untuk tombol delete di tiap baris tabel, cukup:
@@ -175,14 +227,16 @@ Pola CRUD di boilerplate ini mengikuti struktur standar berikut (contoh nama mod
    ```
    Lalu tempel **satu** modal `#confirm-delete-modal` + form `#confirm-delete-form` di bagian bawah `index.blade.php` (contoh strukturnya bisa dicontek dari `resources/views/users/index.blade.php`) — form action-nya akan otomatis di-set oleh JS global di layout, tidak perlu bikin modal baru per baris data.
 
-6. **Permission** — tambahkan ke `RolePermissionSeeder`:
+6. **Permission** — tambahkan ke `$appPermissions` di `AppAccessSeeder` (tanpa awalan, otomatis jadi `<app>.items.view`), lalu jalankan `php artisan db:seed --class=AppAccessSeeder`:
    ```php
-   'items.view', 'items.create', 'items.edit', 'items.delete',
+   private array $appPermissions = ['items.view', 'items.create', 'items.edit', 'items.delete'];
+   private array $userPermissions = ['items.view'];   // bila user biasa boleh melihat
    ```
+   Di policy/Blade pakai nama lengkapnya, mis. `$user->can(config('access.app').'.items.view')` atau `@can('namaapp.items.view')`.
 
 7. **Sidebar Menu**
    ```blade
-   @can('items.view')
+   @can(config('access.app').'.items.view')
        <li>
            <a href="{{ url('/items') }}" @class(['active' => request()->is('/items*')])>
                <span class="icon-[tabler--icon-name] size-5"></span>
@@ -227,6 +281,7 @@ Dokumentasi setup environment untuk deployment project (Local, Git, dan Server).
 ```env
 APP_NAME=
 APP_KEY=            # php artisan key:generate
+ACCESS_APP=         # nama app, huruf kecil
 
 DB_HOST=shared-mysql
 DB_PORT=3306
@@ -331,13 +386,24 @@ APP_ENV=production
 APP_KEY=
 APP_DEBUG=false
 APP_URL=            # domain project
+ACCESS_APP=         # nama app (awalan role/permission), sama dengan lokal
 
 DB_HOST=shared-mysql
 DB_PORT=3306
 DB_DATABASE=
 DB_USERNAME=root
 DB_PASSWORD=
+
+# Auth terpusat: salin dari .env project lain di server (mis. /var/www/laravel/money/.env)
+SUPABASE_DB_HOST=aws-0-ap-southeast-1.pooler.supabase.com
+SUPABASE_DB_PORT=5432
+SUPABASE_DB_DATABASE=postgres
+SUPABASE_DB_USERNAME=
+SUPABASE_DB_PASSWORD=
+SUPABASE_DB_SSLMODE=require
 ```
+
+Setelah deploy pertama: `docker exec <app>-app php artisan db:seed --class=AppAccessSeeder --force`.
 
 ### 3.3 Setup Docker Container (Setting per Server)
 

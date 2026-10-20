@@ -2,41 +2,39 @@
 
 namespace App\Policies;
 
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 use App\Models\User;
 
 class RolePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('roles.manage');
+        return $user->can('roles.view');
     }
 
     public function view(User $user, Role $role): bool
     {
-        return $user->can('roles.manage');
+        return $user->can('roles.view');
     }
 
     public function create(User $user): bool
     {
-        return $user->can('roles.manage');
+        return $user->can('roles.create');
     }
 
     public function update(User $user, Role $role): bool
     {
-        if ($role->name === 'Super Admin' && !$user->hasRole('Super Admin')) {
-            return false;
-        }
-        return $user->can('roles.manage');
+        return $user->can('roles.edit');
     }
 
     public function delete(User $user, Role $role): bool
     {
-        return $role->name !== 'Super Admin' && $user->can('roles.manage');
+        return $user->can('roles.delete');
     }
 
+    // Membuat/menghapus permission mengubah daftar bersama semua app: khusus super-admin
     public function managePermissions(User $user): bool
     {
-        return $user->hasRole('Super Admin');
+        return $user->hasRole(config('access.super_admin_role'));
     }
 }

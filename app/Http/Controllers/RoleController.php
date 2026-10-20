@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Role;
 use App\Models\Permission;
 
+// Role terpusat di Supabase: halaman ini hanya mengelola role berawalan "<app>." (config access.app)
 class RoleController extends Controller
 {
     public function index(Request $request)
@@ -16,27 +17,30 @@ class RoleController extends Controller
 
         $search = $request->query('search');
 
-        $roles = Role::with('permissions')
-            ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%"))
+        $roles = Role::forApp()->with('permissions')
+            ->when($search, fn($q) => $q->where('name', 'ilike', "%{$search}%"))
             ->paginate(10)
             ->withQueryString();
 
-        $permissions = Permission::orderBy('name')->get();
+        $permissions = Permission::forApp()->orderBy('name')->get();
 
         return view('roles.index', compact('roles', 'search', 'permissions'));
     }
 
     public function show(Role $role)
     {
+        $this->ensureOwned($role);
         $this->authorize('view', $role);
         $role->load('permissions');
+
         return view('roles.show', compact('role'));
     }
 
     public function create()
     {
         $this->authorize('create', Role::class);
-        $permissions = Permission::orderBy('name')->get();
+        $permissions = Permission::forApp()->orderBy('name')->get();
+
         return view('roles.create', compact('permissions'));
     }
 
@@ -44,39 +48,40 @@ class RoleController extends Controller
     {
         $role = Role::create(['name' => $request->name]);
         $role->syncPermissions($request->permissions ?? []);
+
         return redirect()->route('roles.index')->with('success', 'Successfully added role.');
     }
 
     public function edit(Role $role)
     {
-        if($role->name == 'Super Admin'){
-            return redirect()->route('roles.index')->with('error','Super Admin role cannot be edited.');
-        }
-
+        $this->ensureOwned($role);
         $this->authorize('update', $role);
-        $permissions = Permission::orderBy('name')->get();
+        $permissions = Permission::forApp()->orderBy('name')->get();
+
         return view('roles.edit', compact('role', 'permissions'));
     }
 
     public function update(UpdateRoleRequest $request, Role $role)
     {
-        if($role->name == 'Super Admin'){
-            return redirect()->route('roles.index')->with('error','Super Admin role cannot be updated.');
-        }
-
+        $this->ensureOwned($role);
         $role->update(['name' => $request->name]);
         $role->syncPermissions($request->permissions ?? []);
+
         return redirect()->route('roles.index')->with('success', 'Successfully updated role.');
     }
 
     public function destroy(Role $role)
     {
-        if($role->name == 'Super Admin'){
-            return redirect()->route('roles.index')->with('error','Super Admin role cannot be deleted.');
-        }
-
+        $this->ensureOwned($role);
         $this->authorize('delete', $role);
         $role->delete();
+
         return redirect()->route('roles.index')->with('success', 'Successfully deleted role.');
+    }
+
+    // super-admin dan role app lain tidak bisa diubah dari app ini
+    private function ensureOwned(Role $role): void
+    {
+        abort_unless(str_starts_with($role->name, Role::appPrefix()), 404);
     }
 }

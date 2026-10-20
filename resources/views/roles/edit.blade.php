@@ -17,7 +17,7 @@
 				</label>
 				<input type="text" id="name" name="name" value="{{ old('name', $role->name) }}"
 					class="input input-bordered w-full @error('name') is-invalid @enderror"
-					@if ($role->name === 'Super Admin') readonly @endif required />
+					@if ($role->name === config('access.super_admin_role')) readonly @endif required />
 				@error('name')
 					<span class="text-error text-xs mt-1">{{ $message }}</span>
 				@enderror

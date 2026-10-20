@@ -20,7 +20,7 @@ Route::post('register',[AuthController::class, 'store'])->name('register.store')
 
 Route::post('logout',[AuthController::class, 'logout'])->name('logout');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'app.access'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('users',UserController::class);
     Route::resource('roles', RoleController::class);

@@ -8,7 +8,7 @@
 				<p class="text-sm text-base-content/70">Overview of role and its full permission list.</p>
 			</div>
 			<div class="flex gap-2">
-				@if ($role->name !== 'Super Admin')
+				@if ($role->name !== config('access.super_admin_role'))
 					<a href="{{ route('roles.edit', $role->id) }}" class="btn btn-warning btn-sm">Edit</a>
 				@endif
 				<a href="{{ route('roles.index') }}" class="btn btn-ghost btn-sm">Back to List</a>

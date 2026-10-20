@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Spatie\Permission\Models\Role as SpatieRole;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -11,6 +12,20 @@ class Role extends SpatieRole
 {
     use LogsActivity;
 
+    // Data role & permission terpusat di Supabase
+    protected $connection = 'supabase';
+
+    // Role milik app ini (awalan "<app>.")
+    public function scopeForApp(Builder $query): Builder
+    {
+        return $query->where('name', 'like', config('access.app').'.%');
+    }
+
+    public static function appPrefix(): string
+    {
+        return config('access.app').'.';
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -18,7 +33,7 @@ class Role extends SpatieRole
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
-    
+
     public function tapActivity(Activity $activity, string $eventName): void
     {
         $activity->description = match ($eventName) {

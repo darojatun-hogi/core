@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Notifications\DatabaseNotification;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -24,9 +24,9 @@ class NotificationController extends Controller
         return view('notifications.index', compact('notifications'));
     }
 
-    public function read(DatabaseNotification $notification)
+    public function read(Notification $notification)
     {
-        abort_unless($notification->notifiable_id === Auth::id(), 403);
+        abort_unless((int) $notification->notifiable_id === (int) Auth::id() &&$notification->app === config('access.app'), 403);
 
         if (! $notification->read_at) {
             $notification->markAsRead();

@@ -23,7 +23,7 @@ class UserPolicy
 
     public function update(User $user, User $model): bool
     {
-        if ($model->hasRole('Super Admin') && ! $user->hasRole('Super Admin')) {
+        if ($model->hasRole(config('access.super_admin_role')) && ! $user->hasRole(config('access.super_admin_role'))) {
             return false;
         }
         return $user->can('users.edit');
@@ -31,7 +31,7 @@ class UserPolicy
 
     public function delete(User $user, User $model): bool
     {
-        if ($model->hasRole('Super Admin') && ! $user->hasRole('Super Admin')) {
+        if ($model->hasRole(config('access.super_admin_role')) && ! $user->hasRole(config('access.super_admin_role'))) {
             return false;
         }
 

@@ -70,7 +70,7 @@
 											@can('view', $role)
 												<a href="{{ route('roles.show', $role) }}" class="btn btn-info btn-xs sm:btn-sm">Show</a>
 											@endcan
-											@if ($role->name !== 'Super Admin')
+											@if ($role->name !== config('access.super_admin_role'))
 												@can('update', $role)
 													<a href="{{ route('roles.edit', $role) }}" class="btn btn-warning btn-xs sm:btn-sm">Edit</a>
 												@endcan

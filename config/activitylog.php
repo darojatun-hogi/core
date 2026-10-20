@@ -17,7 +17,7 @@ return [
      * If no log name is passed to the activity() helper
      * we use this default log name.
      */
-    'default_log_name' => 'default',
+    'default_log_name' => env('ACCESS_APP', 'core'),
 
     /*
      * You can specify an auth driver here that gets user models.
@@ -48,5 +48,5 @@ return [
      * the Activity model shipped with this package. In case it's not set
      * Laravel's database.default will be used instead.
      */
-    'database_connection' => env('ACTIVITY_LOGGER_DB_CONNECTION'),
+    'database_connection' => env('ACTIVITY_LOGGER_DB_CONNECTION', 'supabase'),
 ];

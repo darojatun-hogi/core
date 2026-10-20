@@ -16,8 +16,8 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'min:3', 'max:255'],
-            'username' => ['required', 'string', 'min:3', 'max:255', 'unique:users,username', 'alpha_dash'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'username' => ['required', 'string', 'min:3', 'max:255', 'unique:supabase.users,username', 'alpha_dash'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:supabase.users,email'],
             'password' => ['required', 'string', Password::defaults(), 'confirmed'],
         ];
     }

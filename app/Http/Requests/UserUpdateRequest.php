@@ -4,8 +4,8 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 use Illuminate\Validation\Rules\Password;
+use App\Models\Role;
 
 class UserUpdateRequest extends FormRequest
 {
@@ -20,22 +20,12 @@ class UserUpdateRequest extends FormRequest
 
         return [
             'name'      => ['required', 'string', 'max:255'],
-            'username'  => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('users', 'username')->ignore($userId)],
-            'email'     => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
+            'username'  => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('supabase.users', 'username')->ignore($userId)],
+            'email'     => ['required', 'string', 'email', 'max:255', Rule::unique('supabase.users', 'email')->ignore($userId)],
             'password'  => ['nullable', 'string', Password::defaults(), 'confirmed'],
             'roles'     => ['required', 'array', 'min:1'],
-            'roles.*'   => ['exists:roles,name'],
+            // super-admin tidak bisa diberikan dari app; hanya role milik app ini
+            'roles.*'   => [Rule::in(Role::forApp()->pluck('name'))],
         ];
-    }
-
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator) {
-            if (in_array('Super Admin', $this->input('roles', []))
-                && ! $this->user()->hasRole('Super Admin')) 
-            {
-                $validator->errors()->add('roles', 'Only a Super Admin can assign the Super Admin role.');
-            }
-        });
     }
 }

@@ -2,28 +2,27 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
-use App\Models\User;
-
+// Hanya untuk database auth yang masih kosong (dev lokal / instalasi pertama).
+// Tabel users di Supabase dipakai semua app, jadi seeder ini tidak menambah apa pun bila sudah ada user.
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        if (User::query()->exists()) {
+            $this->command?->warn('Tabel users sudah berisi data, UserSeeder dilewati.');
+
+            return;
+        }
+
         $admin = User::create([
             'name' => 'Admin',
             'username' => 'admin',
             'email' => 'admin@example.com',
             'password' => bcrypt('admin123'),
         ]);
-        
-        if ($admin) {
-            $admin->syncRoles('Super Admin');
-        }
-
-        User::factory(100)->create();
+        $admin->syncRoles(config('access.super_admin_role'));
     }
 }

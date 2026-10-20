@@ -24,7 +24,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::before(function ($user, $ability) {
-            return $user->hasRole('Super Admin') ? true : null;
+            // super-admin berlaku di semua app yang memakai tabel auth bersama
+            return $user->hasRole(config('access.super_admin_role')) ? true : null;
         });
 
         View::composer('layouts.dashboard.navbar', NotificationComposer::class);

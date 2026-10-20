@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    // Tabel auth terpusat di Supabase
+    protected $connection = 'supabase';
+
     /**
      * Run the migrations.
      */
@@ -19,6 +22,11 @@ return new class extends Migration
 
         throw_if(empty($tableNames), Exception::class, 'Error: config/permission.php not loaded. Run [php artisan config:clear] and try again.');
         throw_if($teams && empty($columnNames['team_foreign_key'] ?? null), Exception::class, 'Error: team_foreign_key on config/permission.php not loaded. Run [php artisan config:clear] and try again.');
+
+        // Tabel pusat di Supabase: dilewati bila sudah dibuat oleh app lain
+        if (Schema::hasTable($tableNames['permissions'])) {
+            return;
+        }
 
         Schema::create($tableNames['permissions'], static function (Blueprint $table) {
             // $table->engine('InnoDB');
@@ -121,14 +129,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        $tableNames = config('permission.table_names');
-
-        throw_if(empty($tableNames), Exception::class, 'Error: config/permission.php not found and defaults could not be merged. Please publish the package configuration before proceeding, or drop the tables manually.');
-
-        Schema::drop($tableNames['role_has_permissions']);
-        Schema::drop($tableNames['model_has_roles']);
-        Schema::drop($tableNames['model_has_permissions']);
-        Schema::drop($tableNames['roles']);
-        Schema::drop($tableNames['permissions']);
+        // Tabel pusat: tidak di-drop dari app mana pun
     }
 };

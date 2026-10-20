@@ -9,7 +9,9 @@ class ActivityLogController extends Controller
 {
     public function index(Request $request)
     {
-        $activities = Activity::with(['causer', 'subject'])
+        // activity_log terpusat di Supabase: hanya tampilkan log milik app ini
+        $activities = Activity::inLog(config('activitylog.default_log_name'))
+            ->with(['causer', 'subject'])
             ->when($request->subject_type, fn ($q) => $q->where('subject_type', $request->subject_type))
             ->when($request->event, fn ($q) => $q->where('event', $request->event))
             ->latest()

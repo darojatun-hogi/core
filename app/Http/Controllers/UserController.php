@@ -14,13 +14,6 @@ use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    protected function notifiableAdmins(?User $except = null)
-    {
-        return User::role(['Admin', 'Super Admin'])
-            ->when($except, fn ($q) => $q->whereKeyNot($except->id))
-            ->get();
-    }
-
     /**
      * Display a listing of the resource.
      */
@@ -32,16 +25,17 @@ class UserController extends Controller
 
         $users = User::query()
             ->with('roles')
-            ->when(! $request->user()->hasRole('Super Admin'), function ($query) {
+            ->withAppAccess()
+            ->when(! $request->user()->hasRole(config('access.super_admin_role')), function ($query) {
                 $query->whereDoesntHave('roles', function ($query) {
-                    $query->where('name', 'Super Admin');
+                    $query->where('name', config('access.super_admin_role'));
                 });
             })
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
-                   $query->where('name', 'like', "%{$search}%")
-                       ->orWhere('email', 'like', "%{$search}%")
-                       ->orWhere('username', 'like', "%{$search}%");
+                   $query->where('name', 'ilike', "%{$search}%")
+                       ->orWhere('email', 'ilike', "%{$search}%")
+                       ->orWhere('username', 'ilike', "%{$search}%");
                });
             })
             ->orderBy('name')
@@ -58,11 +52,7 @@ class UserController extends Controller
     {
         $this->authorize('create', User::class);
 
-        $roles = Role::pluck('name', 'name');
-
-        if (! $request->user()->hasRole('Super Admin')) {
-            $roles = $roles->except('Super Admin');
-        }
+        $roles = Role::forApp()->pluck('name', 'name');
 
         return view('users.create', compact('roles'));
     }
@@ -81,7 +71,7 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $user->syncRoles($validated['roles']);
+        $user->syncAppRoles($validated['roles']);
 
         $activity = $user->activities()->where('event', 'created')->latest()->first();
         if ($activity) {
@@ -118,11 +108,7 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
 
-        $roles = Role::pluck('name', 'name');
-
-        if (! $request->user()->hasRole('Super Admin')) {
-            $roles = $roles->except('Super Admin');
-        }
+        $roles = Role::forApp()->pluck('name', 'name');
 
         return view('users.edit', compact('user', 'roles'));
     }
@@ -143,7 +129,7 @@ class UserController extends Controller
             'password' => $validated['password'] ? Hash::make($validated['password']) : $user->password,
         ]);
 
-        $user->syncRoles($validated['roles']);
+        $user->syncAppRoles($validated['roles']);
 
         $newRoles = $user->getRoleNames()->toArray();
 
@@ -165,19 +151,27 @@ class UserController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Akun dipakai app lain juga, jadi "hapus" di sini = cabut akses ke app ini, bukan hapus akun.
      */
     public function destroy(User $user)
     {
         $this->authorize('delete', $user);
 
+        $oldRoles = $user->getRoleNames()->toArray();
+        $user->syncAppRoles([]);
+
+        activity()
+            ->causedBy(Auth::user())
+            ->performedOn($user)
+            ->event('updated')
+            ->withProperties(['old' => ['roles' => $oldRoles], 'attributes' => ['roles' => $user->getRoleNames()->toArray()]])
+            ->log("Akses " . config('access.app') . " dicabut untuk \"{$user->name}\"");
+
         Notification::send(
             User::notifiableAdmins(except: Auth::user()),
-            new UserActivityNotification($user, Auth::user(), 'deleted')
+            new UserActivityNotification($user, Auth::user(), 'revoked access for')
         );
 
-        $user->delete();
-
-        return redirect()->route('users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('users.index')->with('success', 'Akses user ke aplikasi ini dicabut.');
     }
 }

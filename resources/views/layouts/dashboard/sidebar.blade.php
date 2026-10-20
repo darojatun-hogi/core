@@ -22,7 +22,7 @@
 					<span class="overlay-minified:hidden">Home</span>
 				</a>
 			</li>
-			@canAny(['users.view', 'roles.manage'])
+			@canAny(['users.view', 'roles.view'])
 				<li
 					class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:15] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]">
 					<button id="dropdown-default" type="button" class="dropdown-toggle" aria-haspopup="menu" aria-expanded="false"
@@ -44,7 +44,7 @@
 							</li>
 						@endcan
 
-						@can('roles.manage')
+						@can('roles.view')
 							<li>
 								<a href="{{ route('roles.index') }}" @class(['active' => request()->is('/roles')])>
 									<span class="icon-[tabler--shield] size-5"></span>
