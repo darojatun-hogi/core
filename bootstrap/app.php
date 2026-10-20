@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'app.access' => \App\Http\Middleware\EnsureAppAccess::class,
+            'managed.app' => \App\Http\Middleware\SelectManagedApp::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

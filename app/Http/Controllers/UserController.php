@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ManagedApp;
 use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
@@ -25,7 +26,7 @@ class UserController extends Controller
 
         $users = User::query()
             ->with('roles')
-            ->withAppAccess()
+            ->withAppAccess(ManagedApp::current())
             ->when(! $request->user()->hasRole(config('access.super_admin_role')), function ($query) {
                 $query->whereDoesntHave('roles', function ($query) {
                     $query->where('name', config('access.super_admin_role'));
@@ -52,7 +53,7 @@ class UserController extends Controller
     {
         $this->authorize('create', User::class);
 
-        $roles = Role::forApp()->pluck('name', 'name');
+        $roles = Role::forApp(ManagedApp::current())->pluck('name', 'name');
 
         return view('users.create', compact('roles'));
     }
@@ -71,7 +72,7 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $user->syncAppRoles($validated['roles']);
+        $user->syncAppRoles($validated['roles'], ManagedApp::current());
 
         $activity = $user->activities()->where('event', 'created')->latest()->first();
         if ($activity) {
@@ -82,7 +83,7 @@ class UserController extends Controller
         }
 
         Notification::send(
-            User::notifiableAdmins(except: Auth::user()),
+            User::notifiableAdmins(except: Auth::user(), app: ManagedApp::current()),
             new UserActivityNotification($user, Auth::user(), 'created')
         );
 
@@ -108,7 +109,7 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
 
-        $roles = Role::forApp()->pluck('name', 'name');
+        $roles = Role::forApp(ManagedApp::current())->pluck('name', 'name');
 
         return view('users.edit', compact('user', 'roles'));
     }
@@ -126,10 +127,10 @@ class UserController extends Controller
             'name' => $validated['name'],
             'username' => $validated['username'],
             'email' => $validated['email'],
-            'password' => $validated['password'] ? Hash::make($validated['password']) : $user->password,
+            'password' => filled($validated['password'] ?? null) ? Hash::make($validated['password']) : $user->password,
         ]);
 
-        $user->syncAppRoles($validated['roles']);
+        $user->syncAppRoles($validated['roles'], ManagedApp::current());
 
         $newRoles = $user->getRoleNames()->toArray();
 
@@ -143,7 +144,7 @@ class UserController extends Controller
         }
 
         Notification::send(
-            User::notifiableAdmins(except: Auth::user()),
+            User::notifiableAdmins(except: Auth::user(), app: ManagedApp::current()),
             new UserActivityNotification($user, Auth::user(), 'updated')
         );
 
@@ -158,17 +159,17 @@ class UserController extends Controller
         $this->authorize('delete', $user);
 
         $oldRoles = $user->getRoleNames()->toArray();
-        $user->syncAppRoles([]);
+        $user->syncAppRoles([], ManagedApp::current());
 
         activity()
             ->causedBy(Auth::user())
             ->performedOn($user)
             ->event('updated')
             ->withProperties(['old' => ['roles' => $oldRoles], 'attributes' => ['roles' => $user->getRoleNames()->toArray()]])
-            ->log("Akses " . config('access.app') . " dicabut untuk \"{$user->name}\"");
+            ->log("Akses " . ManagedApp::current() . " dicabut untuk \"{$user->name}\"");
 
         Notification::send(
-            User::notifiableAdmins(except: Auth::user()),
+            User::notifiableAdmins(except: Auth::user(), app: ManagedApp::current()),
             new UserActivityNotification($user, Auth::user(), 'revoked access for')
         );
 

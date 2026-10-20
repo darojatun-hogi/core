@@ -22,7 +22,19 @@
 					<span class="overlay-minified:hidden">Home</span>
 				</a>
 			</li>
+			{{-- Mode client SSO: user/role/permission app ini dikelola di hub --}}
+			@if (! Route::has('users.index') && Route::has('access.manage') && \App\Support\ManagedApp::canManage(auth()->user(), config('access.app')))
+				<li>
+					<a href="{{ route('access.manage') }}" target="_blank" rel="noopener">
+						<span class="icon-[tabler--shield-lock] size-5"></span>
+						<span class="overlay-minified:hidden">Kelola Akses</span>
+						<span class="icon-[tabler--external-link] size-4 overlay-minified:hidden"></span>
+					</a>
+				</li>
+			@endif
+
 			@canAny(['users.view', 'roles.view'])
+			@if (Route::has('users.index'))
 				<li
 					class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:15] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]">
 					<button id="dropdown-default" type="button" class="dropdown-toggle" aria-haspopup="menu" aria-expanded="false"
@@ -54,7 +66,8 @@
 						@endcan
 					</ul>
 				</li>
-			@endcan
+			@endif
+			@endcanany
 
 			@can('activity-log.view')
 				<li>

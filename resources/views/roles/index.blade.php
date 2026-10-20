@@ -23,6 +23,8 @@
 			</div>
 		</div>
 
+		@include('partials.managed-app')
+
 		<div class="rounded-box border border-base-300 bg-base-100 p-3 shadow-sm">
 			<form action="{{ route('roles.index') }}" method="GET" class="flex w-full flex-row items-center gap-2">
 				<input type="search" name="search" value="{{ $search }}" placeholder="Search by role name"

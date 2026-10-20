@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ManagedApp;
 use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use Illuminate\Http\Request;
 use App\Models\Role;
 use App\Models\Permission;
 
-// Role terpusat di Supabase: halaman ini hanya mengelola role berawalan "<app>." (config access.app)
+// Role terpusat di Supabase: halaman ini hanya mengelola role berawalan "<app>." dari app yang dipilih (ManagedApp)
 class RoleController extends Controller
 {
     public function index(Request $request)
@@ -17,12 +18,12 @@ class RoleController extends Controller
 
         $search = $request->query('search');
 
-        $roles = Role::forApp()->with('permissions')
+        $roles = Role::forApp(ManagedApp::current())->with('permissions')
             ->when($search, fn($q) => $q->where('name', 'ilike', "%{$search}%"))
             ->paginate(10)
             ->withQueryString();
 
-        $permissions = Permission::forApp()->orderBy('name')->get();
+        $permissions = Permission::forApp(ManagedApp::current())->orderBy('name')->get();
 
         return view('roles.index', compact('roles', 'search', 'permissions'));
     }
@@ -39,7 +40,7 @@ class RoleController extends Controller
     public function create()
     {
         $this->authorize('create', Role::class);
-        $permissions = Permission::forApp()->orderBy('name')->get();
+        $permissions = Permission::forApp(ManagedApp::current())->orderBy('name')->get();
 
         return view('roles.create', compact('permissions'));
     }
@@ -56,7 +57,7 @@ class RoleController extends Controller
     {
         $this->ensureOwned($role);
         $this->authorize('update', $role);
-        $permissions = Permission::forApp()->orderBy('name')->get();
+        $permissions = Permission::forApp(ManagedApp::current())->orderBy('name')->get();
 
         return view('roles.edit', compact('role', 'permissions'));
     }
@@ -82,6 +83,6 @@ class RoleController extends Controller
     // super-admin dan role app lain tidak bisa diubah dari app ini
     private function ensureOwned(Role $role): void
     {
-        abort_unless(str_starts_with($role->name, Role::appPrefix()), 404);
+        abort_unless(str_starts_with($role->name, Role::appPrefix(ManagedApp::current())), 404);
     }
 }

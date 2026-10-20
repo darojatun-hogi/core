@@ -201,6 +201,7 @@ return [
          * file. Using 'default' here means to use the `default` set in cache.php.
          */
 
-        'store' => 'default',
+        // Produksi: "shared" (config/cache.php) di semua app, supaya perubahan dari hub langsung berlaku
+        'store' => env('PERMISSION_CACHE_STORE', 'default'),
     ],
 ];

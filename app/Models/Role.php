@@ -15,15 +15,15 @@ class Role extends SpatieRole
     // Data role & permission terpusat di Supabase
     protected $connection = 'supabase';
 
-    // Role milik app ini (awalan "<app>.")
-    public function scopeForApp(Builder $query): Builder
+    // Role milik app ini (awalan "<app>."), atau app lain yang dikelola dari hub
+    public function scopeForApp(Builder $query, ?string $app = null): Builder
     {
-        return $query->where('name', 'like', config('access.app').'.%');
+        return $query->where('name', 'like', static::appPrefix($app).'%');
     }
 
-    public static function appPrefix(): string
+    public static function appPrefix(?string $app = null): string
     {
-        return config('access.app').'.';
+        return ($app ?? config('access.app')).'.';
     }
 
     public function getActivitylogOptions(): LogOptions

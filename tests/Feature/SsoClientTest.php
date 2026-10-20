@@ -70,6 +70,24 @@ class SsoClientTest extends TestCase
         $this->get('/email/verify')->assertRedirect('https://auth.elips.id/email/verify?redirect='.urlencode(url('/dashboard')));
     }
 
+    public function test_user_management_lives_in_the_hub(): void
+    {
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('users.index'));
+
+        $admin = $this->makeOutsider();
+        $admin->assignRole('core.admin');
+
+        $this->actingAs($admin)->get('/access')->assertRedirect('https://auth.elips.id/users?app=core');
+    }
+
+    public function test_plain_user_cannot_open_access_link(): void
+    {
+        $user = $this->makeOutsider();
+        $user->assignRole('core.user');
+
+        $this->actingAs($user)->get('/access')->assertForbidden();
+    }
+
     public function test_logout_returns_to_hub_login(): void
     {
         $this->actingAs($this->makeOutsider())

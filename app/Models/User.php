@@ -100,9 +100,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return ! is_null($this->email_verified_at);
     }
 
-    public static function notifiableAdmins(?User $except = null)
+    public static function notifiableAdmins(?User $except = null, ?string $app = null)
     {
-        return static::role([Role::appPrefix() . 'admin', config('access.super_admin_role')])
+        return static::role([Role::appPrefix($app) . 'admin', config('access.super_admin_role')])
             ->when($except, fn ($q) => $q->whereKeyNot($except->id))
             ->get();
     }
@@ -116,9 +116,9 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     // User yang punya akses ke app ini: role "<app>.*", super-admin, atau permission "<app>.access" langsung
-    public function scopeWithAppAccess(Builder $query): Builder
+    public function scopeWithAppAccess(Builder $query, ?string $app = null): Builder
     {
-        $app = config('access.app');
+        $app ??= config('access.app');
 
         return $query->where(fn (Builder $q) => $q
             ->whereHas('roles', fn (Builder $r) => $r->where(fn (Builder $x) => $x
@@ -128,10 +128,10 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     // Ganti role milik app ini saja; role app lain (mis. money.*) dan super-admin tetap
-    public function syncAppRoles(array $roles): void
+    public function syncAppRoles(array $roles, ?string $app = null): void
     {
         $others = $this->roles->pluck('name')
-            ->reject(fn (string $name) => str_starts_with($name, Role::appPrefix()))
+            ->reject(fn (string $name) => str_starts_with($name, Role::appPrefix($app)))
             ->all();
 
         $this->syncRoles([...$others, ...$roles]);

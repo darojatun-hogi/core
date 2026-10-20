@@ -92,7 +92,7 @@
 					required
 				>
 					@foreach ($roles as $role)
-						<option value="{{ $role }}" {{ in_array($role, old('roles', [config('access.app') . '.user'])) ? 'selected' : '' }}>
+						<option value="{{ $role }}" {{ in_array($role, old('roles', [\App\Support\ManagedApp::current() . '.user'])) ? 'selected' : '' }}>
 							{{ $role }}</option>
 					@endforeach
 				</select>

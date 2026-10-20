@@ -15,11 +15,11 @@ class Permission extends SpatiePermission
     // Data role & permission terpusat di Supabase
     protected $connection = 'supabase';
 
-    // Permission milik app ini ditambah permission identitas yang dipakai bersama
-    public function scopeForApp(Builder $query): Builder
+    // Permission milik app ini (atau app yang dikelola dari hub) ditambah permission identitas yang dipakai bersama
+    public function scopeForApp(Builder $query, ?string $app = null): Builder
     {
         return $query->where(fn (Builder $q) => $q
-            ->where('name', 'like', config('access.app').'.%')
+            ->where('name', 'like', Role::appPrefix($app).'%')
             ->orWhereIn('name', config('access.shared_permissions')));
     }
 

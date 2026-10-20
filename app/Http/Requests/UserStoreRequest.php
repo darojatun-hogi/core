@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\ManagedApp;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -11,7 +12,7 @@ class UserStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('users.create');
+        return $this->user()->can('users.create') && ManagedApp::canManage($this->user());
     }
 
     public function rules(): array
@@ -22,8 +23,8 @@ class UserStoreRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', 'unique:supabase.users,email'],
             'password' => ['required', 'string', Password::defaults(), 'confirmed'],
             'roles' => ['required', 'array', 'min:1'],
-            // super-admin tidak bisa diberikan dari app; hanya role milik app ini
-            'roles.*' => [Rule::in(Role::forApp()->pluck('name'))],
+            // super-admin tidak bisa diberikan dari sini; hanya role milik app yang dikelola
+            'roles.*' => [Rule::in(Role::forApp(ManagedApp::current())->pluck('name'))],
         ];
     }
 }

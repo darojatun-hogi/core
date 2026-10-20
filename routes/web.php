@@ -48,9 +48,17 @@ if (config('sso.hub')) {
 
 Route::middleware(['auth', 'app.access', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('users',UserController::class);
-    Route::resource('roles', RoleController::class);
-    Route::resource('permissions', PermissionController::class)->only(['store', 'destroy']);
+    // Pengaturan user/role/permission terpusat: hanya di hub (semua app) atau app standalone (app sendiri).
+    // App client mengarahkan ke halaman Users di hub dengan app ini terpilih.
+    if (config('sso.hub')) {
+        Route::middleware('managed.app')->group(function () {
+            Route::resource('users',UserController::class);
+            Route::resource('roles', RoleController::class);
+            Route::resource('permissions', PermissionController::class)->only(['store', 'destroy']);
+        });
+    } else {
+        Route::get('access', [SsoController::class, 'manageAccess'])->name('access.manage');
+    }
 
     Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');

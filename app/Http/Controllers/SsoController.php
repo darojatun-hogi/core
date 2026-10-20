@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ManagedApp;
 use App\Support\Sso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,14 @@ class SsoController extends Controller
     public function verifyEmail(Request $request)
     {
         return redirect()->away(Sso::hubUrl('email/verify', ['redirect' => $this->returnUrl($request)]));
+    }
+
+    // User, role, dan permission app ini dikelola di hub (khusus super-admin dan "<app>.admin")
+    public function manageAccess(Request $request)
+    {
+        abort_unless(ManagedApp::canManage($request->user(), config('access.app')), 403);
+
+        return redirect()->away(Sso::hubUrl('users', ['app' => config('access.app')]));
     }
 
     // Session dipakai bersama semua app, jadi logout di sini juga keluar dari semua app

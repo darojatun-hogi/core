@@ -27,6 +27,7 @@ Boilerplate Laravel untuk membangun aplikasi web dengan cepat, dilengkapi sistem
 ### 2. User & Profile Management
 - CRUD User dengan permission granular
 - Multi-role assignment per user
+- Pengaturan user, role & permission terpusat di hub `auth.elips.id` untuk semua app, dengan delegasi per app (`<app>.admin` hanya mengelola app miliknya). App client hanya punya tautan **Kelola Akses** ke hub; app standalone tetap punya halamannya sendiri
 - Edit Profile & Reset Password
 
 ### 3. Notifikasi
@@ -70,7 +71,7 @@ Aturan yang perlu diikuti:
 - **Nama app** diatur lewat `ACCESS_APP` (`config/access.php`). Semua role/permission milik app berawalan `<app>.`, `log_name` activity log dan kolom `app` di notifikasi juga memakai nama ini.
 - **Permission** format `resource.action`. Milik app: `<app>.items.view`. Identitas bersama tanpa awalan: `users.*`, `roles.*`, `permissions.*`, `activity-log.view`.
 - **Role**: `super-admin` berlaku di semua app (`Gate::before`, tanpa daftar permission). Tiap app punya `<app>.admin` dan `<app>.user`.
-- **Akses app**: middleware `app.access` menolak user tanpa `<app>.access`. Halaman Users/Roles hanya menampilkan user dan role milik app ini (`User::withAppAccess()`, `Role::forApp()`).
+- **Akses app**: middleware `app.access` menolak user tanpa `<app>.access`. Halaman Users/Roles hanya menampilkan user dan role milik app yang sedang dikelola (`User::withAppAccess($app)`, `Role::forApp($app)`, app dari `ManagedApp::current()`).
 - **Jangan hapus akun dari app**: tombol "Cabut akses" mencabut role `<app>.*` saja. Ubah role selalu lewat `$user->syncAppRoles([...])` agar role app lain tidak ikut hilang.
 - **Model bisnis wajib `protected $connection = 'mysql';`**. Relasi dari model Supabase (mis. subject activity log) mewarisi koneksi induknya bila model relasi tidak menetapkan koneksi sendiri.
 - **Tanpa foreign key ke `users`** di tabel MySQL (beda database): pakai `$table->foreignId('user_id')->index();`. Hindari `join`/`whereHas` antara model `supabase` dan `mysql`; pakai eager loading.
@@ -95,6 +96,7 @@ SESSION_COOKIE=elips_session
 SESSION_DOMAIN=.elips.id         # produksi; dev lokal: null (cookie localhost berlaku lintas port)
 SESSION_LIFETIME=120
 SSO_HUB_URL=https://auth.elips.id
+PERMISSION_CACHE_STORE=shared    # cache permission Spatie bersama (lihat catatan di bawah)
 ```
 
 Catatan:
@@ -104,6 +106,9 @@ Catatan:
 - **Redirect setelah login** hanya diizinkan ke domain `SSO_ALLOWED_DOMAIN` dan subdomainnya (default: dari `SESSION_DOMAIN`).
 - **Jangan simpan data terenkripsi** (`encrypted` cast, `Crypt::`) yang bergantung pada `APP_KEY` milik satu app, karena key dipakai bersama.
 - Key session bersifat global antar app: beri awalan nama app untuk data session milik app (mis. `money.tour_shown`).
+- **Pengaturan akses terpusat**: halaman Users, Roles & Permissions hanya ada di hub (dan app standalone). Di hub, pilih app lewat tombol **Aplikasi** (atau `?app=money`). `super-admin` mengelola semua app; `<app>.admin` hanya app miliknya dan hanya user yang punya akses ke app itu. App client punya route `access.manage` (menu **Kelola Akses**) yang membuka `auth.elips.id/users?app=<app>`, tampil untuk `super-admin`/`<app>.admin`.
+- **Definisi permission tetap di tiap app** (`AppAccessSeeder` → `$appPermissions`), karena kode app yang memakainya. Hub hanya membagikan permission itu ke role. Permission baru: tambahkan di seeder app, deploy, jalankan seeder; permission langsung muncul di hub.
+- **Cache permission bersama**: Spatie meng-cache pemetaan role → permission. Semua app memakai store `shared` (tabel `shared_cache` di Supabase) lewat `PERMISSION_CACHE_STORE=shared`, sehingga perubahan role/permission di hub langsung berlaku di app lain. Tanpa ini, app lain baru melihat perubahan setelah cache 24 jam habis.
 - **Turnstile**: satu widget dipakai semua app dengan hostname `elips.id` (berlaku untuk semua subdomain). App baru di `*.elips.id` tidak perlu menambah hostname.
 
 App yang sudah berjalan di VPS (`/var/www/laravel/<folder>`):
@@ -160,7 +165,8 @@ Pilih salah satu mode, lalu ikuti langkahnya. Detail tiap langkah server ada di 
    - `config/sso.php` → `home` bila halaman awal app bukan `/dashboard`.
    - `database/seeders/AppAccessSeeder.php` → `$appPermissions` dan `$userPermissions`.
    - `ACCESS_AUTO_GRANT=false` di `.env` bila akses app harus diberikan admin.
-6. **Daftarkan app di hub** (repo core): tambah entri di `config/sso.php` → `apps` supaya muncul di dashboard `auth.elips.id`, lalu push core.
+   - Halaman Users/Roles tidak ada di mode client; menu **Kelola Akses** mengarah ke hub.
+6. **Daftarkan app di hub** (repo core): tambah entri di `config/sso.php` → `apps` (key = `ACCESS_APP`) supaya app muncul di dashboard dan bisa dipilih di halaman Users/Roles `auth.elips.id`, lalu push core.
 7. **GitHub**: buat repo baru, ganti nama image di `docker-compose.prod.yml` (`ghcr.io/darojatun-hogi/<repo>-app`, `-nginx`), isi secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_PROJECT_PATH` (lihat [2.3](#23-isi-github-secrets-pada-directory-setting-per-project)).
 8. **VPS**: buat folder `/var/www/laravel/<folder>` berisi `docker-compose.prod.yml` dan `.env` produksi (lihat [3.2](#32-update-file-env-setting-per-project)). Untuk mode SSO:
    ```env
@@ -171,6 +177,7 @@ Pilih salah satu mode, lalu ikuti langkahnya. Detail tiap langkah server ada di 
    SESSION_DOMAIN=.elips.id
    SESSION_SECURE_COOKIE=true
    SESSION_LIFETIME=120
+   PERMISSION_CACHE_STORE=shared
    APP_PORT=8085            # port belum terpakai
    ```
    Buat database MySQL-nya: `docker exec -it shared-mysql mysql -uroot -p -e "CREATE DATABASE nama_db"`.
@@ -197,7 +204,7 @@ Dipakai bila app di luar `*.elips.id` atau sengaja tidak ikut login bersama. App
    TURNSTILE_SITE_KEY=                # kosongkan di lokal
    TURNSTILE_SECRET_KEY=
    ```
-3. **Kosongkan daftar app hub**: di `config/sso.php` set `'apps' => []` supaya dashboard tidak menampilkan kartu app Elips.
+3. **Kosongkan daftar app hub**: di `config/sso.php` set `'apps' => []` supaya dashboard tidak menampilkan kartu app Elips dan halaman Users/Roles hanya mengelola app ini sendiri.
 4. **Migration & seeder, sesuaikan app**: sama dengan langkah A.4 dan A.5.
 5. **GitHub**: sama dengan langkah A.7.
 6. **VPS**: `.env` produksi seperti [3.2](#32-update-file-env-setting-per-project), dengan:
@@ -310,7 +317,7 @@ users.*, roles.*, permissions.*, activity-log.view   # identitas bersama semua a
 | Role | Isi |
 |---|---|
 | `super-admin` | Semua akses di semua app (lewat `Gate::before`) |
-| `<app>.admin` | `<app>.access` + semua permission app + identitas bersama |
+| `<app>.admin` | `<app>.access` + semua permission app + identitas bersama; di hub hanya mengelola app miliknya |
 | `<app>.user` | `<app>.access` + permission di `$userPermissions`; diberikan otomatis saat user pertama kali membuka app (`ACCESS_AUTO_GRANT=true`) |
 
 ## Menambah Modul CRUD Baru
@@ -381,7 +388,7 @@ Pola CRUD di boilerplate ini mengikuti struktur standar berikut (contoh nama mod
    private array $appPermissions = ['items.view', 'items.create', 'items.edit', 'items.delete'];
    private array $userPermissions = ['items.view'];   // bila user biasa boleh melihat
    ```
-   Di policy/Blade pakai nama lengkapnya, mis. `$user->can(config('access.app').'.items.view')` atau `@can('namaapp.items.view')`.
+   Di policy/Blade pakai nama lengkapnya, mis. `$user->can(config('access.app').'.items.view')` atau `@can('namaapp.items.view')`. Di app SSO, permission ini lalu dibagikan ke role lewat halaman Roles di hub (`auth.elips.id/roles?app=namaapp`).
 
 7. **Sidebar Menu**
    ```blade
@@ -556,6 +563,7 @@ SUPABASE_DB_SSLMODE=require
 SESSION_COOKIE=elips_session
 SESSION_DOMAIN=.elips.id
 SESSION_SECURE_COOKIE=true
+PERMISSION_CACHE_STORE=shared   # app SSO; app standalone boleh dihapus
 SSO_HUB=false       # true hanya untuk hub (auth.elips.id) atau app standalone
 SSO_HUB_URL=https://auth.elips.id
 APP_PORT=           # port host untuk nginx, beda per app (lihat tabel di bagian SSO)

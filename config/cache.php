@@ -47,6 +47,17 @@ return [
             'lock_table' => env('DB_CACHE_LOCK_TABLE'),
         ],
 
+        // Cache bersama semua app di Supabase (dipakai cache permission Spatie): prefix tetap supaya
+        // perubahan role/permission di hub langsung menghapus cache yang dibaca app lain
+        'shared' => [
+            'driver' => 'database',
+            'connection' => 'supabase',
+            'table' => 'shared_cache',
+            'lock_connection' => 'supabase',
+            'lock_table' => 'shared_cache_locks',
+            'prefix' => 'elips',
+        ],
+
         'file' => [
             'driver' => 'file',
             'path' => storage_path('framework/cache/data'),

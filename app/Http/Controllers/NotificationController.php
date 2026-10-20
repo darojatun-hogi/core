@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -33,6 +34,11 @@ class NotificationController extends Controller
         }
 
         $data = $notification->data;
+
+        // App client SSO: halaman user ada di hub
+        if (isset($data['user_id']) && ! Route::has('users.index')) {
+            return redirect()->route('access.manage');
+        }
 
         if (isset($data['user_id']) && ! User::find($data['user_id'])) {
             return redirect()->route('users.index')
