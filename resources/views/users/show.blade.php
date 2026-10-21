@@ -1,107 +1,65 @@
 @extends('layouts.dashboard.master')
-@section('title', 'Show User')
+@section('title', $user->name)
 @section('content')
-	<div class="max-w-2xl mx-auto my-8 p-6 bg-base-100 rounded-xl shadow-md border border-base-200">
-		<!-- Header -->
-		<div class="flex items-center justify-between pb-4 mb-6 border-b border-base-200">
-			<div>
-				<h2 class="text-2xl font-bold text-base-content">User Details</h2>
-				<p class="text-sm text-base-content/70">Overview of user's profile information.</p>
-			</div>
-			<div class="flex gap-2">
-				@can('update', $user)
-					<a href="{{ route('users.edit', $user->id) }}" class="btn btn-warning btn-sm">
-						Edit
+	<div class="mx-auto flex max-w-2xl flex-col gap-6">
+		<x-page-header :title="$user->name" :description="$user->email" :back="route('users.index')">
+			@can('update', $user)
+				<x-slot:actions>
+					<a href="{{ route('users.edit', $user->id) }}" class="btn btn-primary">
+						<span class="icon-[tabler--pencil] size-5"></span>
+						Ubah
 					</a>
-				@endcan
-				<a href="{{ route('users.index') }}" class="btn btn-ghost btn-sm">
-					Back to List
-				</a>
-			</div>
+				</x-slot:actions>
+			@endcan
+		</x-page-header>
+
+		<div class="rounded-box border border-base-content/10 bg-base-100">
+			<dl class="divide-y divide-base-content/10">
+				<div class="grid gap-1 px-5 py-4 sm:grid-cols-3 sm:gap-4 sm:px-6">
+					<dt class="text-sm text-base-content/70">Username</dt>
+					<dd class="sm:col-span-2">{{ $user->username }}</dd>
+				</div>
+				<div class="grid gap-1 px-5 py-4 sm:grid-cols-3 sm:gap-4 sm:px-6">
+					<dt class="text-sm text-base-content/70">Email</dt>
+					<dd class="break-all sm:col-span-2">{{ $user->email }}</dd>
+				</div>
+				<div class="grid gap-1 px-5 py-4 sm:grid-cols-3 sm:gap-4 sm:px-6">
+					<dt class="text-sm text-base-content/70">Role</dt>
+					<dd class="flex flex-wrap gap-1 sm:col-span-2">
+						@forelse ($user->roles as $role)
+							<span class="badge badge-soft">{{ $role->name }}</span>
+						@empty
+							<span class="text-base-content/70">Belum punya role</span>
+						@endforelse
+					</dd>
+				</div>
+				<div class="grid gap-1 px-5 py-4 sm:grid-cols-3 sm:gap-4 sm:px-6">
+					<dt class="text-sm text-base-content/70">Dibuat</dt>
+					<dd class="sm:col-span-2">{{ $user->created_at?->translatedFormat('d M Y, H:i') ?? '-' }}</dd>
+				</div>
+				<div class="grid gap-1 px-5 py-4 sm:grid-cols-3 sm:gap-4 sm:px-6">
+					<dt class="text-sm text-base-content/70">Terakhir diubah</dt>
+					<dd class="sm:col-span-2">{{ $user->updated_at?->translatedFormat('d M Y, H:i') ?? '-' }}</dd>
+				</div>
+			</dl>
 		</div>
 
-		<!-- Details Content -->
-		<div class="space-y-4">
-			<!-- User ID -->
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-base-200/50">
-				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">User ID</span>
-				<span class="font-mono text-sm font-bold text-primary">#{{ str_pad($user->id, 5, '0', STR_PAD_LEFT) }}</span>
-			</div>
-
-			<!-- Full Name -->
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-base-200/50">
-				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Full Name</span>
-				<span class="text-sm font-medium text-base-content">{{ $user->name }}</span>
-			</div>
-
-			<!-- Username -->
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-base-200/50">
-				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Username</span>
-				<span class="text-sm font-medium text-base-content">{{ $user->username }}</span>
-			</div>
-
-			<!-- Email -->
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-base-200/50">
-				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Email</span>
-				<span class="text-sm font-medium text-base-content">{{ $user->email }}</span>
-			</div>
-
-			<!-- Role -->
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-base-200/50">
-				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Role</span>
-				<span class="flex gap-1">
-					@forelse ($user->roles as $role)
-						<span class="badge badge-soft badge-primary">{{ $role->name }}</span>
-					@empty
-						<span class="text-sm text-base-content/50">No role assigned</span>
-					@endforelse
-				</span>
-			</div>
-
-			<!-- Metadata (Created / Updated) -->
-			<div class="grid grid-cols-2 gap-2 pt-2 text-xs text-base-content/50">
-				<div>Created: {{ $user->created_at?->format('d M Y, H:i') ?? '-' }}</div>
-				<div class="text-right">Last Updated: {{ $user->updated_at?->format('d M Y, H:i') ?? '-' }}</div>
-			</div>
-		</div>
-
-		<!-- Delete Action Modal Trigger -->
-		<div class="mt-8 pt-4 border-t border-base-200 flex justify-end items-center">
-			@can('delete', $user)
-				<button type="button" class="btn btn-error btn-outline btn-xs" aria-haspopup="dialog" aria-expanded="false"
+		@can('delete', $user)
+			<div class="flex flex-col gap-3 rounded-box border border-error/30 bg-base-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+				<div>
+					<h2 class="font-semibold">Cabut akses ke aplikasi ini</h2>
+					<p class="mt-1 text-sm text-base-content/70">Akun dan akses ke aplikasi lain tidak ikut terhapus.</p>
+				</div>
+				<button type="button" class="btn btn-error btn-outline shrink-0" aria-haspopup="dialog" aria-expanded="false"
 					aria-controls="confirm-delete-modal" data-overlay="#confirm-delete-modal"
 					data-delete-url="{{ route('users.destroy', $user) }}">
 					Cabut akses
 				</button>
-			@endcan
-		</div>
-	</div>
-
-	<!-- Delete Confirmation Modal -->
-	<div id="confirm-delete-modal"
-		class="overlay modal overlay-open:opacity-100 overlay-open:duration-300 modal-middle hidden" role="dialog"
-		tabindex="-1">
-		<div class="modal-dialog modal-dialog-sm">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h3 class="modal-title">Cabut akses</h3>
-					<button type="button" class="btn btn-text btn-circle btn-sm absolute end-3 top-3" aria-label="Close"
-						data-overlay="#confirm-delete-modal">
-						<span class="icon-[tabler--x] size-4"></span>
-					</button>
-				</div>
-				<div class="modal-body">
-					Cabut akses user ini ke aplikasi ini? Akun dan aksesnya di aplikasi lain tetap ada.
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-soft btn-secondary" data-overlay="#confirm-delete-modal">Cancel</button>
-					<form id="confirm-delete-form" method="POST">
-						@csrf
-						@method('DELETE')
-						<button type="submit" class="btn btn-error">Cabut akses</button>
-					</form>
-				</div>
 			</div>
-		</div>
+
+			<x-confirm-modal title="Cabut akses pengguna" confirm="Cabut akses">
+				{{ $user->name }} tidak bisa lagi masuk ke aplikasi ini. Akunnya dan akses ke aplikasi lain tetap ada.
+			</x-confirm-modal>
+		@endcan
 	</div>
 @endsection

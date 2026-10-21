@@ -1,55 +1,70 @@
 @extends('layouts.dashboard.master')
-@section('title', 'Notifications')
+@section('title', 'Notifikasi')
 @section('content')
-	<div class="rounded-box border border-base-300 bg-base-100 p-3 shadow-sm">
-		<div class="flex items-center justify-between mb-4">
-			<div class="flex gap-2">
-				<a href="{{ route('notifications.index') }}"
-					class="btn btn-sm {{ !request('filter') ? 'btn-primary' : 'btn-outline' }}">All</a>
-				<a href="{{ route('notifications.index', ['filter' => 'unread']) }}"
-					class="btn btn-sm {{ request('filter') === 'unread' ? 'btn-primary' : 'btn-outline' }}">Unread</a>
-				<a href="{{ route('notifications.index', ['filter' => 'read']) }}"
-					class="btn btn-sm {{ request('filter') === 'read' ? 'btn-primary' : 'btn-outline' }}">Read</a>
-			</div>
+	@php($filter = request('filter'))
 
-			<form action="{{ route('notifications.markAllRead') }}" method="POST">
-				@csrf
-				<button type="submit" class="btn btn-sm btn-outline">
-					Mark all as read
-				</button>
-			</form>
-		</div>
+	<div class="flex flex-col gap-6">
+		<x-page-header title="Notifikasi" description="Perubahan akses dan akun yang melibatkan kamu.">
+			<x-slot:actions>
+				<form action="{{ route('notifications.markAllRead') }}" method="POST">
+					@csrf
+					<button type="submit" class="btn btn-soft">
+						<span class="icon-[tabler--checks] size-5"></span>
+						Tandai semua dibaca
+					</button>
+				</form>
+			</x-slot:actions>
+		</x-page-header>
 
-		<div class="flex flex-col gap-3">
-			@forelse ($notifications as $notification)
-				<a href="{{ route('notifications.read', $notification->id) }}"
-					class="flex items-start gap-3 py-3 {{ $notification->read_at ? '' : 'bg-base-200/50' }} px-2 rounded-box border">
-					<div class="relative shrink-0">
-						<div class="avatar avatar-placeholder @unless ($notification->read_at) avatar-busy-top @endunless">
-							<div class="bg-neutral text-neutral-content size-11 rounded-full">
-								<span class="text-sm">
-									{{ Str::of($notification->data['actor_name'] ?? '?')->substr(0, 2)->upper() }}
+		<div class="overflow-hidden rounded-box border border-base-content/10 bg-base-100">
+			<nav class="flex gap-1 border-b border-base-content/10 px-3 pt-3" aria-label="Filter notifikasi">
+				@foreach ([null => 'Semua', 'unread' => 'Belum dibaca', 'read' => 'Sudah dibaca'] as $key => $label)
+					<a href="{{ route('notifications.index', array_filter(['filter' => $key])) }}"
+						@if ($filter === ($key ?: null)) aria-current="page" @endif
+						@class([
+							'-mb-px border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors',
+							'border-primary text-primary' => $filter === ($key ?: null),
+							'border-transparent text-base-content/70 hover:text-base-content' => $filter !== ($key ?: null),
+						])>{{ $label }}</a>
+				@endforeach
+			</nav>
+
+			@if ($notifications->count())
+				<ul class="divide-y divide-base-content/10">
+					@foreach ($notifications as $notification)
+						<li>
+							<a href="{{ route('notifications.read', $notification->id) }}"
+								class="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-base-200 sm:px-6">
+								<span @class([
+									'mt-2 size-2 shrink-0 rounded-full',
+									'bg-primary' => ! $notification->read_at,
+									'bg-transparent' => $notification->read_at,
+								])>
+									@unless ($notification->read_at)
+										<span class="sr-only">Belum dibaca</span>
+									@endunless
 								</span>
-							</div>
-						</div>
-					</div>
-					<div class="flex-1">
-						<h6 class="text-base">{{ $notification->data['title'] }}</h6>
-						<small class="text-base-content/50">{{ $notification->data['message'] }}</small>
-					</div>
-					<small class="text-base-content/40 whitespace-nowrap">
-						{{ $notification->created_at->diffForHumans() }}
-					</small>
-				</a>
-			@empty
-				<div class="py-8 text-center text-base-content/50">
-					No notifications found.
-				</div>
-			@endforelse
+								<span class="min-w-0 flex-1">
+									<span @class(['block', 'font-semibold' => ! $notification->read_at])>{{ $notification->data['title'] }}</span>
+									<span class="mt-0.5 block text-sm text-base-content/70">{{ $notification->data['message'] }}</span>
+								</span>
+								<time datetime="{{ $notification->created_at->toIso8601String() }}"
+									class="shrink-0 text-sm text-base-content/70" title="{{ $notification->created_at->translatedFormat('d M Y, H:i') }}">
+									{{ $notification->created_at->diffForHumans() }}
+								</time>
+							</a>
+						</li>
+					@endforeach
+				</ul>
+			@elseif ($filter === 'unread')
+				<x-empty-state icon="icon-[tabler--checks]" title="Semua sudah dibaca"
+					description="Notifikasi baru akan muncul di sini." />
+			@else
+				<x-empty-state icon="icon-[tabler--bell-off]" title="Belum ada notifikasi"
+					description="Kamu akan diberi tahu di sini saat akses atau akunmu berubah." />
+			@endif
 		</div>
 
-		<div class="mt-4">
-			{{ $notifications->links('vendor.pagination.flyonui') }}
-		</div>
+		{{ $notifications->links('vendor.pagination.flyonui') }}
 	</div>
 @endsection

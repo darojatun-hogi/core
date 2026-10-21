@@ -1,48 +1,20 @@
 @extends('layouts.auth.master')
 @section('title', 'Reset Password')
 @section('content')
-	<div class="max-w-md my-8 p-6 bg-base-100">
-		<div class="mb-6">
-			<h2 class="text-2xl font-bold text-base-content">Reset Password</h2>
-			<p class="text-sm text-base-content/70">Enter your new password below.</p>
-		</div>
-
-		<form action="{{ route('password.update') }}" method="POST" class="space-y-4">
-			@csrf
-
-			<input type="hidden" name="token" value="{{ $token }}">
-
-			<div class="form-control w-full">
-				<label class="label" for="email">
-					<span class="label-text font-medium">Email</span>
-				</label>
-				<input type="email" id="email" name="email" value="{{ old('email', $email) }}"
-					class="input input-bordered w-full @error('email') is-invalid @enderror" required autofocus>
-				@error('email')
-					<span class="text-error text-xs mt-1">{{ $message }}</span>
-				@enderror
-			</div>
-
-			<div class="form-control w-full">
-				<label class="label" for="password">
-					<span class="label-text font-medium">New Password</span>
-				</label>
-				<input type="password" id="password" name="password"
-					class="input input-bordered w-full @error('password') is-invalid @enderror" required>
-				@error('password')
-					<span class="text-error text-xs mt-1">{{ $message }}</span>
-				@enderror
-			</div>
-
-			<div class="form-control w-full">
-				<label class="label" for="password_confirmation">
-					<span class="label-text font-medium">Confirm New Password</span>
-				</label>
-				<input type="password" id="password_confirmation" name="password_confirmation" class="input input-bordered w-full"
-					required>
-			</div>
-
-			<button type="submit" class="btn btn-primary w-full">Reset Password</button>
-		</form>
+	<div class="mb-6">
+		<h1 class="text-2xl font-semibold tracking-tight">Buat password baru</h1>
+		<p class="mt-1 text-sm text-base-content/70">Setelah disimpan, masuk kembali dengan password baru ini.</p>
 	</div>
+
+	<form action="{{ route('password.update') }}" method="POST" class="space-y-4">
+		@csrf
+		<input type="hidden" name="token" value="{{ $token }}">
+
+		<x-field name="email" type="email" label="Email" :value="$email" required autocomplete="email" />
+		<x-field name="password" type="password" label="Password baru" required autofocus autocomplete="new-password" />
+		<x-field name="password_confirmation" type="password" label="Ulangi password baru" required
+			autocomplete="new-password" />
+
+		<button type="submit" class="btn btn-primary btn-block">Simpan password baru</button>
+	</form>
 @endsection

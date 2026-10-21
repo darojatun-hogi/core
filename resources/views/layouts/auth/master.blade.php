@@ -2,38 +2,25 @@
 <html lang="id">
 
 	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Login</title>
-
-		@vite(['resources/css/app.css', 'resources/js/app.js'])
+		@include('partials.head')
 		@if (config('services.turnstile.site_key'))
 			<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 		@endif
-		@if (session('success'))
-			<script>
-				window.addEventListener('load', function() {
-					window.notyf.success(@json(session('success')));
-				});
-			</script>
-		@endif
-
-		@if (session('error'))
-			<script>
-				window.addEventListener('load', function() {
-					window.notyf.error(@json(session('error')));
-				});
-			</script>
-		@endif
 	</head>
 
-	<body class="font-sans antialiased bg-base-200">
-		<div class="flex min-h-screen items-center justify-center px-4">
-			<div class="card w-full max-w-md bg-base-100 shadow-md">
-				<div class="card-body">
-					@yield('content')
-				</div>
+	<body class="min-h-screen bg-base-200 font-sans text-base-content antialiased">
+		<div class="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+			<a href="{{ url('/') }}" class="mb-8 text-2xl font-bold tracking-tight text-base-content">Elips</a>
+
+			<div class="w-full max-w-md rounded-box border border-base-content/10 bg-base-100 p-6 sm:p-8">
+				@yield('content')
 			</div>
+
+			@hasSection('footer')
+				<div class="mt-6 text-center text-sm text-base-content/70">
+					@yield('footer')
+				</div>
+			@endif
 		</div>
 	</body>
 

@@ -28,6 +28,6 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole(config('access.super_admin_role')) ? true : null;
         });
 
-        View::composer('layouts.dashboard.navbar', NotificationComposer::class);
+        View::composer(['layouts.dashboard.master', 'dashboard'], NotificationComposer::class);
     }
 }

@@ -1,117 +1,106 @@
-<aside id="collapsible-mini-sidebar"
-	class="overlay [--auto-close:sm] overlay-minified:w-17 sm:shadow-none overlay-open:translate-x-0 drawer drawer-start hidden w-66 sm:relative sm:z-0 sm:flex sm:translate-x-0 border-e border-base-content/20"
-	role="dialog" tabindex="-1">
+{{-- Submenu memakai collapse (bukan dropdown) supaya tetap terbuka saat salah satu halamannya aktif --}}
+@php($accessOpen = request()->routeIs('users.*', 'roles.*'))
 
-	<div class="drawer-header overlay-minified:px-3.75 py-2 w-full flex items-center justify-between gap-3">
-		<h3 class="drawer-title text-xl font-semibold overlay-minified:hidden">FlyonUI</h3>
-		<div class="hidden sm:block">
-			<button type="button" class="btn btn-circle btn-text" aria-haspopup="dialog" aria-expanded="false"
-				aria-controls="collapsible-mini-sidebar" aria-label="Minify navigation"
-				data-overlay-minifier="#collapsible-mini-sidebar">
-				<span class="icon-[tabler--menu-2] size-5"></span>
-				<span class="sr-only">Navigation Toggle</span>
-			</button>
-		</div>
+<aside id="app-sidebar"
+	class="overlay [--auto-close:sm] overlay-minified:w-17 overlay-open:translate-x-0 drawer drawer-start hidden w-64 border-e border-base-content/10 bg-base-100 sm:relative sm:z-0 sm:flex sm:translate-x-0 sm:shadow-none"
+	role="dialog" tabindex="-1" aria-label="Navigasi utama">
+
+	<div class="drawer-header flex h-16 w-full items-center justify-between gap-3 px-5 py-0 overlay-minified:px-3.5">
+		<a href="{{ route('dashboard') }}" class="text-xl font-bold tracking-tight text-base-content overlay-minified:hidden">
+			Elips
+		</a>
+		<button type="button" class="btn btn-text btn-square btn-sm max-sm:hidden" aria-haspopup="dialog" aria-expanded="false"
+			aria-controls="app-sidebar" aria-label="Perkecil navigasi" data-overlay-minifier="#app-sidebar">
+			<span class="icon-[tabler--layout-sidebar-left-collapse] size-5 overlay-minified:hidden"></span>
+			<span class="icon-[tabler--layout-sidebar-left-expand] hidden size-5 overlay-minified:block"></span>
+		</button>
+		<button type="button" class="btn btn-text btn-square btn-sm sm:hidden" aria-label="Tutup navigasi"
+			data-overlay="#app-sidebar">
+			<span class="icon-[tabler--x] size-5"></span>
+		</button>
 	</div>
 
-	<div class="drawer-body px-2 pt-4">
-		<ul class="menu p-0">
+	<div class="drawer-body px-3 pb-4 pt-2 overlay-minified:px-2">
+		<ul class="menu gap-1 p-0">
 			<li>
-				<a href="{{ route('dashboard') }}" @class(['active' => request()->is('/')])>
-					<span class="icon-[tabler--home] size-5"></span>
-					<span class="overlay-minified:hidden">Home</span>
+				<a href="{{ route('dashboard') }}" @class(['menu-active' => request()->routeIs('dashboard')])
+					@if (request()->routeIs('dashboard')) aria-current="page" @endif>
+					<span class="icon-[tabler--smart-home] size-5 shrink-0"></span>
+					<span class="overlay-minified:hidden">Beranda</span>
 				</a>
 			</li>
+
 			{{-- Mode client SSO: user/role/permission app ini dikelola di hub --}}
 			@if (! Route::has('users.index') && Route::has('access.manage') && \App\Support\ManagedApp::canManage(auth()->user(), config('access.app')))
 				<li>
 					<a href="{{ route('access.manage') }}" target="_blank" rel="noopener">
-						<span class="icon-[tabler--shield-lock] size-5"></span>
-						<span class="overlay-minified:hidden">Kelola Akses</span>
-						<span class="icon-[tabler--external-link] size-4 overlay-minified:hidden"></span>
+						<span class="icon-[tabler--shield-lock] size-5 shrink-0"></span>
+						<span class="grow overlay-minified:hidden">Kelola Akses</span>
+						<span class="icon-[tabler--external-link] size-4 text-base-content/60 overlay-minified:hidden"
+							aria-label="dibuka di tab baru"></span>
 					</a>
 				</li>
 			@endif
 
 			@canAny(['users.view', 'roles.view'])
-			@if (Route::has('users.index'))
-				<li
-					class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:15] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]">
-					<button id="dropdown-default" type="button" class="dropdown-toggle" aria-haspopup="menu" aria-expanded="false"
-						aria-label="Dropdown">
-						<span class="icon-[tabler--apps] size-5"></span>
-						<span class="overlay-minified:hidden">Authorization</span>
-						<span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4 overlay-minified:hidden"></span>
-					</button>
-					<ul
-						class="dropdown-menu mt-0 shadow-none overlay-minified:shadow-md overlay-minified:shadow-base-300/20 dropdown-open:opacity-100 hidden min-w-60 overlay-minified:before:absolute overlay-minified:before:-start-4 overlay-minified:before:top-0 overlay-minified:before:h-full overlay-minified:before:w-4 before:bg-transparent"
-						role="menu" aria-orientation="vertical" aria-labelledby="dropdown-default">
-
-						@can('users.view')
-							<li>
-								<a href="{{ route('users.index') }}" @class(['active' => request()->is('/users')])>
-									<span class="icon-[tabler--users] size-5"></span>
-									<span class="overlay-minified:hidden">User</span>
-								</a>
-							</li>
-						@endcan
-
-						@can('roles.view')
-							<li>
-								<a href="{{ route('roles.index') }}" @class(['active' => request()->is('/roles')])>
-									<span class="icon-[tabler--shield] size-5"></span>
-									<span class="overlay-minified:hidden">Roles & Permissions</span>
-								</a>
-							</li>
-						@endcan
-					</ul>
-				</li>
-			@endif
+				@if (Route::has('users.index'))
+					<li>
+						<button type="button" id="menu-access-toggle" @class(['collapse-toggle w-full', 'open' => $accessOpen])
+							aria-expanded="{{ $accessOpen ? 'true' : 'false' }}" aria-controls="menu-access"
+							data-collapse="#menu-access">
+							<span class="icon-[tabler--shield-half] size-5 shrink-0"></span>
+							<span class="grow text-start overlay-minified:hidden">Akses</span>
+							<span
+								class="icon-[tabler--chevron-down] size-4 transition-transform duration-200 collapse-open:rotate-180 overlay-minified:hidden"></span>
+						</button>
+						<ul id="menu-access" aria-labelledby="menu-access-toggle"
+							@class([
+								'collapse w-auto overflow-hidden transition-[height] duration-200 mt-1 overlay-minified:ms-0 overlay-minified:ps-0 overlay-minified:before:hidden',
+								'open' => $accessOpen,
+								'hidden' => ! $accessOpen,
+							])>
+							@can('users.view')
+								<li>
+									<a href="{{ route('users.index') }}" @class(['menu-active' => request()->routeIs('users.*')])
+										@if (request()->routeIs('users.*')) aria-current="page" @endif title="Pengguna">
+										<span class="icon-[tabler--users] size-5 shrink-0"></span>
+										<span class="overlay-minified:hidden">Pengguna</span>
+									</a>
+								</li>
+							@endcan
+							@can('roles.view')
+								<li>
+									<a href="{{ route('roles.index') }}" @class(['menu-active' => request()->routeIs('roles.*')])
+										@if (request()->routeIs('roles.*')) aria-current="page" @endif title="Role & Permission">
+										<span class="icon-[tabler--key] size-5 shrink-0"></span>
+										<span class="overlay-minified:hidden">Role & Permission</span>
+									</a>
+								</li>
+							@endcan
+						</ul>
+					</li>
+				@endif
 			@endcanany
 
 			@can('activity-log.view')
 				<li>
-					<a href="{{ route('activity-log.index') }}" @class(['active' => request()->is('/activity-log')])>
-						<span class="icon-[tabler--history] size-5"></span>
-						<span class="overlay-minified:hidden">Activity Log</span>
+					<a href="{{ route('activity-log.index') }}" @class(['menu-active' => request()->routeIs('activity-log.*')])
+						@if (request()->routeIs('activity-log.*')) aria-current="page" @endif>
+						<span class="icon-[tabler--history] size-5 shrink-0"></span>
+						<span class="overlay-minified:hidden">Log Aktivitas</span>
 					</a>
 				</li>
 			@endcan
 
-			{{-- <li
-				class="dropdown relative [--adaptive:none] [--strategy:static] overlay-minified:[--adaptive:adaptive] overlay-minified:[--strategy:fixed] overlay-minified:[--offset:15] overlay-minified:[--trigger:hover] overlay-minified:[--placement:right-start]">
-				<button id="dropdown-default" type="button" class="dropdown-toggle" aria-haspopup="menu" aria-expanded="false"
-					aria-label="Dropdown">
-					<span class="icon-[tabler--apps] size-5"></span>
-					<span class="overlay-minified:hidden">Apps</span>
-					<span class="icon-[tabler--chevron-down] dropdown-open:rotate-180 size-4 overlay-minified:hidden"></span>
-				</button>
-				<ul
-					class="dropdown-menu mt-0 shadow-none overlay-minified:shadow-md overlay-minified:shadow-base-300/20 dropdown-open:opacity-100 hidden min-w-60 overlay-minified:before:absolute overlay-minified:before:-start-4 overlay-minified:before:top-0 overlay-minified:before:h-full overlay-minified:before:w-4 before:bg-transparent"
-					role="menu" aria-orientation="vertical" aria-labelledby="dropdown-default">
-					<li>
-						<a href="{{ url('/mail') }}">
-							<span class="icon-[tabler--mail] size-5"></span>
-							Email
-						</a>
-					</li>
-					<li>
-						<a href="{{ url('/calendar') }}">
-							<span class="icon-[tabler--calendar] size-5"></span>
-							Calendar
-						</a>
-					</li>
-				</ul>
-			</li> --}}
-
 			<li>
-				<form method="POST" action="{{ route('logout') }}" class="w-full flex items-center p-0">
-					@csrf
-					<button type="submit" class="flex w-full items-center gap-3 px-4 py-2 text-start">
-						<span class="icon-[tabler--logout-2] size-5"></span>
-						<span class="overlay-minified:hidden">Sign Out</span>
-					</button>
-				</form>
+				<a href="{{ route('notifications.index') }}" @class(['menu-active' => request()->routeIs('notifications.*')])
+					@if (request()->routeIs('notifications.*')) aria-current="page" @endif>
+					<span class="icon-[tabler--bell] size-5 shrink-0"></span>
+					<span class="grow overlay-minified:hidden">Notifikasi</span>
+					@if ($unreadNotificationsCount > 0)
+						<span class="badge badge-primary badge-sm overlay-minified:hidden">{{ $unreadNotificationsCount }}</span>
+					@endif
+				</a>
 			</li>
 		</ul>
 	</div>

@@ -1,15 +1,13 @@
 @extends('layouts.auth.master')
+@section('title', 'Masuk')
 @section('content')
-	<div class="mb-6 text-center">
-		<h1 class="text-2xl font-semibold text-base-content">Login</h1>
-		<p class="mt-1 text-sm text-base-content/60">
-			Input your email and password to access your account.
-		</p>
+	<div class="mb-6">
+		<h1 class="text-2xl font-semibold tracking-tight">Masuk ke akun Elips</h1>
+		<p class="mt-1 text-sm text-base-content/70">Satu akun untuk semua aplikasi Elips.</p>
 	</div>
 
-	{{-- Session Status --}}
 	@if (session('status'))
-		<div class="alert alert-soft alert-success mb-4 text-sm">
+		<div class="alert alert-soft alert-success mb-4 text-sm" role="status">
 			{{ session('status') }}
 		</div>
 	@endif
@@ -17,74 +15,45 @@
 	<form method="POST" action="{{ route('login.authenticate') }}" class="space-y-4">
 		@csrf
 
-		{{-- Email or Username --}}
-		<div class="form-control w-full">
-			<label for="login" class="label-text mb-1.5 block font-medium">
-				Email or Username
-			</label>
-			<input id="login" type="text" name="login" value="{{ old('login') }}" required autofocus
-				placeholder="john@example.com" class="input @error('login') is-invalid @enderror w-full" />
-			@error('login')
-				<span class="label-text-alt text-error mt-1.5 block">
-					{{ $message }}
-				</span>
-			@enderror
-		</div>
+		<x-field name="login" label="Email atau username" required autofocus autocomplete="username"
+			placeholder="email@example.com" />
 
-		{{-- Password --}}
-		<div class="form-control w-full">
-			<div class="mb-1.5 flex items-center justify-between">
-				<label for="password" class="label-text font-medium">
-					Password
-				</label>
+		<div class="w-full">
+			<div class="mb-1.5 flex items-center justify-between gap-2">
+				<label for="password" class="label-text font-medium text-base-content">Password</label>
+				@if (Route::has('password.request'))
+					<a href="{{ route('password.request') }}" class="link link-primary text-sm">Lupa password?</a>
+				@endif
 			</div>
-			<input id="password" type="password" name="password" required autocomplete="current-password" placeholder="••••••••"
-				class="input @error('password') is-invalid @enderror w-full" />
+			<input id="password" type="password" name="password" required autocomplete="current-password"
+				@class(['input w-full', 'is-invalid' => $errors->has('password')]) />
 			@error('password')
-				<span class="label-text-alt text-error mt-1.5 block">
-					{{ $message }}
-				</span>
+				<p class="mt-1.5 text-sm text-error">{{ $message }}</p>
 			@enderror
 		</div>
 
-		{{-- Remember Me --}}
-		<div class="flex items-center justify-between">
-			<label for="remember_me" class="inline-flex items-center gap-2 cursor-pointer">
-				<input id="remember_me" type="checkbox" name="remember" class="checkbox checkbox-sm checkbox-primary" />
-				<span class="text-sm label-text">Remember me</span>
-			</label>
-
-			@if (Route::has('password.request'))
-				<a href="{{ route('password.request') }}" class="text-sm link link-primary">
-					Forgot your password?
-				</a>
-			@endif
-		</div>
+		<label for="remember_me" class="flex cursor-pointer items-center gap-2">
+			<input id="remember_me" type="checkbox" name="remember" class="checkbox checkbox-primary checkbox-sm" />
+			<span class="text-sm">Ingat saya di perangkat ini</span>
+		</label>
 
 		{{-- Cloudflare Turnstile (aktif bila TURNSTILE_SITE_KEY diisi) --}}
 		@if (config('services.turnstile.site_key'))
-			<div class="form-control w-full">
+			<div>
 				<div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}"></div>
 				@error('cf-turnstile-response')
-					<span class="label-text-alt text-error mt-1.5 block">
-						{{ $message }}
-					</span>
+					<p class="mt-1.5 text-sm text-error">{{ $message }}</p>
 				@enderror
 			</div>
 		@endif
 
-		{{-- Submit --}}
-		<button type="submit" class="btn btn-primary w-full mt-2">
-			Login
-		</button>
-
-		@if (Route::has('register'))
-			<p class="mt-4 text-center text-sm text-base-content/60">
-				Don't have an account?
-				<a href="{{ route('register') }}" class="link link-primary font-medium">
-					Register
-				</a>
-			</p>
-		@endif
+		<button type="submit" class="btn btn-primary btn-block">Masuk</button>
 	</form>
 @endsection
+
+@if (Route::has('register'))
+	@section('footer')
+		Belum punya akun?
+		<a href="{{ route('register') }}" class="link link-primary font-medium">Buat akun</a>
+	@endsection
+@endif

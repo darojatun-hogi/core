@@ -1,37 +1,34 @@
 @extends('layouts.dashboard.master')
-@section('title', 'Show Role')
+@section('title', $role->name)
 @section('content')
-	<div class="max-w-2xl mx-auto my-8 p-6 bg-base-100 rounded-xl shadow-md border border-base-200">
-		<div class="flex items-center justify-between pb-4 mb-6 border-b border-base-200">
-			<div>
-				<h2 class="text-2xl font-bold text-base-content">Role Details</h2>
-				<p class="text-sm text-base-content/70">Overview of role and its full permission list.</p>
-			</div>
-			<div class="flex gap-2">
-				@if ($role->name !== config('access.super_admin_role'))
-					<a href="{{ route('roles.edit', $role->id) }}" class="btn btn-warning btn-sm">Edit</a>
-				@endif
-				<a href="{{ route('roles.index') }}" class="btn btn-ghost btn-sm">Back to List</a>
-			</div>
-		</div>
+	<div class="mx-auto flex max-w-2xl flex-col gap-6">
+		<x-page-header :title="$role->name" :description="$role->permissions->count() . ' permission'" :back="route('roles.index')">
+			@if ($role->name !== config('access.super_admin_role'))
+				@can('update', $role)
+					<x-slot:actions>
+						<a href="{{ route('roles.edit', $role->id) }}" class="btn btn-primary">
+							<span class="icon-[tabler--pencil] size-5"></span>
+							Ubah
+						</a>
+					</x-slot:actions>
+				@endcan
+			@endif
+		</x-page-header>
 
-		<div class="space-y-4">
-			<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-base-200/50">
-				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Role Name</span>
-				<span class="text-sm font-medium text-base-content">{{ $role->name }}</span>
-			</div>
-
-			<div class="p-3 rounded-lg bg-base-200/50">
-				<span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Permissions
-					({{ $role->permissions->count() }})</span>
-				<div class="flex flex-wrap gap-1 mt-2">
-					@forelse ($role->permissions as $permission)
-						<span class="badge badge-soft badge-primary">{{ $permission->name }}</span>
-					@empty
-						<span class="text-xs text-base-content/50">No permissions assigned</span>
-					@endforelse
-				</div>
-			</div>
+		<div class="rounded-box border border-base-content/10 bg-base-100">
+			@if ($role->permissions->isEmpty())
+				<x-empty-state icon="icon-[tabler--key-off]" title="Role ini belum punya permission"
+					description="Pengguna dengan role ini belum bisa melakukan apa pun selain masuk." />
+			@else
+				<ul class="divide-y divide-base-content/10">
+					@foreach ($role->permissions->sortBy('name') as $permission)
+						<li class="flex items-center gap-3 px-5 py-3 sm:px-6">
+							<span class="icon-[tabler--check] size-4 shrink-0 text-primary" aria-hidden="true"></span>
+							<span class="break-all text-sm">{{ $permission->name }}</span>
+						</li>
+					@endforeach
+				</ul>
+			@endif
 		</div>
 	</div>
 @endsection
