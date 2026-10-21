@@ -32,6 +32,8 @@ return [
             'description' => 'Potong video jadi klip pendek lengkap dengan subtitle.'],
         ['key' => 'portfolio', 'name' => 'Portfolio', 'url' => env('SSO_APP_PORTFOLIO_URL', 'https://portfolio.elips.id/admin'), 'icon' => 'icon-[tabler--id-badge-2]', 'tone' => 'bg-sky-600/15 text-sky-600',
             'description' => 'Kelola isi halaman portfolio dan pesan yang masuk.'],
+        ['key' => 'stock', 'name' => 'Stock', 'url' => env('SSO_APP_STOCK_URL', 'https://stock.elips.id'), 'icon' => 'icon-[tabler--chart-candle]', 'tone' => 'bg-amber-600/15 text-amber-600',
+            'description' => 'Saring saham IDX dengan skor teknikal dan pantau hasil sinyal harian.'],
     ],
 
 ];
