@@ -39,6 +39,8 @@ RUN bun install --frozen-lockfile
 
 COPY resources ./resources
 COPY public ./public
+# Ikon & warna app (sso.apps) hanya ditulis di config ini; Tailwind memindainya lewat @source di app.css
+COPY config/sso.php ./config/sso.php
 COPY vite.config.* ./
 COPY tailwind.config.* ./
 
