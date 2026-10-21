@@ -5,6 +5,8 @@
 {{-- Pasang tema sebelum render supaya tidak berkedip saat mode gelap aktif --}}
 <script>
 	(function() {
+		// Aktifkan animasi masuk [data-reveal] (motion.css); tanpa JS konten tetap terlihat
+		document.documentElement.classList.add('motion');
 		try {
 			var saved = localStorage.getItem('theme');
 			var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;

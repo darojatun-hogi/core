@@ -29,18 +29,23 @@
 		</header>
 
 		<main>
-			<section class="bg-base-100">
+			<section class="relative isolate overflow-hidden bg-base-100">
+				{{-- Latar: dua cahaya lembut yang bergerak pelan --}}
+				<div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+					<div class="motion-drift absolute -top-24 right-[-10%] size-80 rounded-full bg-primary/15 blur-3xl sm:size-[28rem]"></div>
+					<div class="motion-drift-reverse absolute -bottom-32 left-[-10%] size-72 rounded-full bg-sky-500/10 blur-3xl"></div>
+				</div>
 				<div class="mx-auto grid max-w-5xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1fr_auto]">
 					<div>
-						<p class="text-sm font-medium text-primary">elips.id</p>
-						<h1 class="mt-3 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
+						<p data-enter class="text-sm font-medium text-primary">elips.id</p>
+						<h1 data-enter style="--i: 1" class="mt-3 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
 							Satu akun untuk semua aplikasi Elips.
 						</h1>
-						<p class="mt-5 max-w-xl text-lg text-base-content/70">
+						<p data-enter style="--i: 2" class="mt-5 max-w-xl text-lg text-base-content/70">
 							Masuk sekali, lalu buka {{ collect($apps)->pluck('name')->join(', ', ', dan ') ?: 'aplikasi Elips' }} tanpa login
 							ulang. Keluar dari satu aplikasi berarti keluar dari semuanya.
 						</p>
-						<div class="mt-8 flex flex-wrap gap-3">
+						<div data-enter style="--i: 3" class="mt-8 flex flex-wrap gap-3">
 							@auth
 								<a href="{{ $hub }}/dashboard" class="btn btn-primary">
 									Buka dashboard
@@ -60,8 +65,10 @@
 					@if ($apps)
 						<ul class="flex flex-wrap gap-4 lg:grid lg:grid-cols-2" aria-hidden="true">
 							@foreach ($apps as $app)
-								<li @class(['flex flex-col items-center gap-2', 'lg:col-span-2' => $loop->last && $loop->odd])>
-									<span @class(['flex size-16 items-center justify-center rounded-box sm:size-20', $app['tone'] ?? 'bg-primary/10 text-primary'])>
+								<li data-enter="zoom" style="--i: {{ $loop->index + 3 }}"
+									@class(['flex flex-col items-center gap-2', 'lg:col-span-2' => $loop->last && $loop->odd])>
+									<span style="--i: {{ $loop->index }}"
+										@class(['motion-float flex size-16 items-center justify-center rounded-box sm:size-20', $app['tone'] ?? 'bg-primary/10 text-primary'])>
 										<span class="{{ $app['icon'] }} size-8 sm:size-10"></span>
 									</span>
 									<span class="text-xs font-medium text-base-content/70">{{ $app['name'] }}</span>
@@ -74,13 +81,13 @@
 
 			@if ($apps)
 				<section aria-labelledby="apps-heading" class="mx-auto max-w-5xl px-4 py-14 sm:px-6">
-					<h2 id="apps-heading" class="text-2xl font-semibold tracking-tight">Aplikasi</h2>
-					<p class="mt-1 text-base-content/70">Semua memakai akun yang sama.</p>
+					<h2 data-reveal id="apps-heading" class="text-2xl font-semibold tracking-tight">Aplikasi</h2>
+					<p data-reveal style="--i: 1" class="mt-1 text-base-content/70">Semua memakai akun yang sama.</p>
 					<ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						@foreach ($apps as $app)
-							<li>
+							<li data-reveal style="--i: {{ $loop->index }}">
 								<a href="{{ $app['url'] }}"
-									class="group flex h-full flex-col rounded-box border border-base-content/10 bg-base-100 p-5 transition-colors hover:border-primary/40 focus-visible:border-primary">
+									class="motion-lift group flex h-full flex-col rounded-box border border-base-content/10 bg-base-100 p-5 transition-colors hover:border-primary/40 focus-visible:border-primary">
 									<span @class(['flex size-12 items-center justify-center rounded-box', $app['tone'] ?? 'bg-primary/10 text-primary'])>
 										<span class="{{ $app['icon'] }} size-6" aria-hidden="true"></span>
 									</span>
@@ -102,14 +109,14 @@
 
 			<section aria-labelledby="steps-heading" class="border-t border-base-content/10">
 				<div class="mx-auto max-w-5xl px-4 py-14 sm:px-6">
-					<h2 id="steps-heading" class="text-2xl font-semibold tracking-tight">Cara mulai</h2>
+					<h2 data-reveal id="steps-heading" class="text-2xl font-semibold tracking-tight">Cara mulai</h2>
 					<ol class="mt-6 grid gap-6 sm:grid-cols-3">
 						@foreach ([
 							['Buat akun', 'Daftar dengan nama, username, dan email.'],
 							['Verifikasi email', 'Klik tautan yang kami kirim ke email kamu.'],
 							['Buka aplikasi', 'Akses diberikan otomatis saat pertama kali membuka aplikasi.'],
 						] as $i => [$title, $text])
-							<li class="flex gap-4">
+							<li data-reveal style="--i: {{ $i }}" class="flex gap-4">
 								<span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-base-100 text-sm font-semibold text-primary ring-1 ring-base-content/10">
 									{{ $i + 1 }}
 								</span>
