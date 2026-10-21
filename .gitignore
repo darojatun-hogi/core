@@ -22,3 +22,27 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# File & folder asisten AI (konfigurasi lokal, tidak ikut repo)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+GEMINI.md
+.gemini/
+.cursor/
+.cursorrules
+.cursorignore
+.windsurf/
+.windsurfrules
+.codex/
+.aider*
+.continue/
+.cline/
+.clinerules
+.kiro/
+.junie/
+.github/copilot-instructions.md
+.mcp.json
+anti-slop/
+antislop.md
