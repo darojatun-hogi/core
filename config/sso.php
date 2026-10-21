@@ -24,13 +24,13 @@ return [
     // (SESSION_DOMAIN=.elips.id -> elips.id), atau host APP_URL bila SESSION_DOMAIN kosong (dev lokal)
     'allowed_domain' => env('SSO_ALLOWED_DOMAIN', ltrim((string) (env('SESSION_DOMAIN') ?: parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)), '.')),
 
-    // Daftar app yang tampil di dashboard dan landing page hub
+    // Daftar app yang tampil di dashboard dan landing page hub. 'tone' = warna ikon di landing page (kelas Tailwind lengkap)
     'apps' => [
-        ['key' => 'money', 'name' => 'Money', 'url' => env('SSO_APP_MONEY_URL', 'https://money.elips.id'), 'icon' => 'icon-[tabler--wallet]',
+        ['key' => 'money', 'name' => 'Money', 'url' => env('SSO_APP_MONEY_URL', 'https://money.elips.id'), 'icon' => 'icon-[tabler--wallet]', 'tone' => 'bg-emerald-600/15 text-emerald-600',
             'description' => 'Catat pemasukan, pengeluaran, dan saldo tiap dompet.'],
-        ['key' => 'clip', 'name' => 'Clip', 'url' => env('SSO_APP_CLIP_URL', 'https://clip.elips.id'), 'icon' => 'icon-[tabler--movie]',
+        ['key' => 'clip', 'name' => 'Clip', 'url' => env('SSO_APP_CLIP_URL', 'https://clip.elips.id'), 'icon' => 'icon-[tabler--movie]', 'tone' => 'bg-rose-600/15 text-rose-600',
             'description' => 'Potong video jadi klip pendek lengkap dengan subtitle.'],
-        ['key' => 'portfolio', 'name' => 'Portfolio', 'url' => env('SSO_APP_PORTFOLIO_URL', 'https://portfolio.elips.id/admin'), 'icon' => 'icon-[tabler--id-badge-2]',
+        ['key' => 'portfolio', 'name' => 'Portfolio', 'url' => env('SSO_APP_PORTFOLIO_URL', 'https://portfolio.elips.id/admin'), 'icon' => 'icon-[tabler--id-badge-2]', 'tone' => 'bg-sky-600/15 text-sky-600',
             'description' => 'Kelola isi halaman portfolio dan pesan yang masuk.'],
     ],
 

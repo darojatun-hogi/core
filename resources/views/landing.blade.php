@@ -30,29 +30,45 @@
 
 		<main>
 			<section class="bg-base-100">
-				<div class="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
-					<p class="text-sm font-medium text-primary">auth.elips.id</p>
-					<h1 class="mt-3 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
-						Satu akun untuk semua aplikasi Elips.
-					</h1>
-					<p class="mt-5 max-w-xl text-lg text-base-content/70">
-						Masuk sekali, lalu buka {{ collect($apps)->pluck('name')->join(', ', ', dan ') ?: 'aplikasi Elips' }} tanpa login
-						ulang. Keluar dari satu aplikasi berarti keluar dari semuanya.
-					</p>
-					<div class="mt-8 flex flex-wrap gap-3">
-						@auth
-							<a href="{{ $hub }}/dashboard" class="btn btn-primary">
-								Buka dashboard
-								<span class="icon-[tabler--arrow-right] size-4" aria-hidden="true"></span>
-							</a>
-						@else
-							<a href="{{ $hub }}/register" class="btn btn-primary">
-								Buat akun gratis
-								<span class="icon-[tabler--arrow-right] size-4" aria-hidden="true"></span>
-							</a>
-							<a href="{{ $hub }}/login" class="btn btn-outline btn-secondary">Saya sudah punya akun</a>
-						@endauth
+				<div class="mx-auto grid max-w-5xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1fr_auto]">
+					<div>
+						<p class="text-sm font-medium text-primary">elips.id</p>
+						<h1 class="mt-3 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
+							Satu akun untuk semua aplikasi Elips.
+						</h1>
+						<p class="mt-5 max-w-xl text-lg text-base-content/70">
+							Masuk sekali, lalu buka {{ collect($apps)->pluck('name')->join(', ', ', dan ') ?: 'aplikasi Elips' }} tanpa login
+							ulang. Keluar dari satu aplikasi berarti keluar dari semuanya.
+						</p>
+						<div class="mt-8 flex flex-wrap gap-3">
+							@auth
+								<a href="{{ $hub }}/dashboard" class="btn btn-primary">
+									Buka dashboard
+									<span class="icon-[tabler--arrow-right] size-4" aria-hidden="true"></span>
+								</a>
+							@else
+								<a href="{{ $hub }}/register" class="btn btn-primary">
+									Buat akun gratis
+									<span class="icon-[tabler--arrow-right] size-4" aria-hidden="true"></span>
+								</a>
+								<a href="{{ $hub }}/login" class="btn btn-outline btn-secondary">Saya sudah punya akun</a>
+							@endauth
+						</div>
 					</div>
+
+					{{-- Ikon tiap app, dekoratif: daftar lengkapnya ada di bagian Aplikasi --}}
+					@if ($apps)
+						<ul class="flex flex-wrap gap-4 lg:grid lg:grid-cols-2" aria-hidden="true">
+							@foreach ($apps as $app)
+								<li @class(['flex flex-col items-center gap-2', 'lg:col-span-2' => $loop->last && $loop->odd])>
+									<span @class(['flex size-16 items-center justify-center rounded-box sm:size-20', $app['tone'] ?? 'bg-primary/10 text-primary'])>
+										<span class="{{ $app['icon'] }} size-8 sm:size-10"></span>
+									</span>
+									<span class="text-xs font-medium text-base-content/70">{{ $app['name'] }}</span>
+								</li>
+							@endforeach
+						</ul>
+					@endif
 				</div>
 			</section>
 
@@ -65,8 +81,8 @@
 							<li>
 								<a href="{{ $app['url'] }}"
 									class="group flex h-full flex-col rounded-box border border-base-content/10 bg-base-100 p-5 transition-colors hover:border-primary/40 focus-visible:border-primary">
-									<span class="flex size-10 items-center justify-center rounded-field bg-primary/10 text-primary">
-										<span class="{{ $app['icon'] }} size-5" aria-hidden="true"></span>
+									<span @class(['flex size-12 items-center justify-center rounded-box', $app['tone'] ?? 'bg-primary/10 text-primary'])>
+										<span class="{{ $app['icon'] }} size-6" aria-hidden="true"></span>
 									</span>
 									<span class="mt-4 flex items-center gap-1 font-medium">
 										{{ $app['name'] }}
