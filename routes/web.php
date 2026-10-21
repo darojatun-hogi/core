@@ -16,7 +16,8 @@ use App\Http\Controllers\SsoController;
 // SSO: hub (SSO_HUB=true) menangani login/register/verifikasi/reset password untuk semua app,
 // app client hanya meneruskan route bernama sama ke hub (lihat config/sso.php)
 if (config('sso.hub')) {
-    Route::get('/',[AuthController::class, 'login'])->name('root');
+    // Landing page hub, juga dibuka lewat domain induk (elips.id)
+    Route::view('/', 'landing')->name('root');
     Route::get('login', [AuthController::class, 'login'])->name('login');
     Route::post('login',[AuthController::class, 'authenticate'])->middleware('throttle:10,1')->name('login.authenticate');
 

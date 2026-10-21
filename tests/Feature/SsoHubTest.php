@@ -118,6 +118,23 @@ class SsoHubTest extends TestCase
         $this->assertDatabaseMissing('users', ['username' => 'budi'], 'supabase');
     }
 
+    public function test_root_shows_landing_page_with_apps(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Satu akun untuk semua aplikasi Elips.')
+            ->assertSee(url('/login'))
+            ->assertSee('money.elips.id');
+    }
+
+    public function test_landing_page_offers_dashboard_when_logged_in(): void
+    {
+        $this->actingAs($this->makeUser())->get('/')
+            ->assertOk()
+            ->assertSee(url('/dashboard'))
+            ->assertDontSee(url('/register'));
+    }
+
     public function test_logout_signs_out_and_shows_login(): void
     {
         $this->actingAs($this->makeUser())->post('/logout')->assertRedirect(route('login'));

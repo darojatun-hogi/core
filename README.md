@@ -123,8 +123,8 @@ App yang sudah berjalan di VPS (`/var/www/laravel/<folder>`):
 
 | App | Domain | `APP_PORT` | Mode |
 |---|---|---|---|
-| core (folder `auth`) | auth.elips.id | 8084 | Hub (`SSO_HUB=true`, `ACCESS_APP=auth`) |
-| money | money.elips.id, elips.id | 8081 | Client |
+| core (folder `auth`) | auth.elips.id, elips.id (landing page) | 8084 | Hub (`SSO_HUB=true`, `ACCESS_APP=auth`) |
+| money | money.elips.id | 8081 | Client |
 | clip | clip.elips.id | 8083 | Client |
 | portofolio | portfolio.elips.id | 8080 | Client (`sso.home` = `/admin`) |
 
