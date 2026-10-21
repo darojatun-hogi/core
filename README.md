@@ -2,6 +2,13 @@
 
 Boilerplate Laravel untuk membangun aplikasi web dengan cepat, dilengkapi sistem autentikasi, role & permission, manajemen user, notifikasi, activity log, dan siap deploy via Docker.
 
+> **Pilih mode autentikasi sebelum memulai project baru.** Core bisa dipakai dengan dua cara, diatur lewat `SSO_HUB` di `.env`:
+>
+> - **Auth terpusat / SSO** (`SSO_HUB=false`, direkomendasikan untuk app di `*.elips.id`): login, register, verifikasi email, reset password, serta pengaturan user/role/permission ditangani hub `auth.elips.id`. Satu kali login berlaku di semua app.
+> - **Standalone** (`SSO_HUB=true`): app punya halaman login dan pengaturan user/role/permission sendiri. Cocok untuk app di luar `*.elips.id` atau yang tidak ikut login bersama.
+>
+> Langkah lengkap keduanya ada di [Membuat Project Baru dari Core](#membuat-project-baru-dari-core). Repo core ini juga yang dideploy sebagai hub `auth.elips.id` (`SSO_HUB=true` hanya di `.env` server hub), jadi clone tetap aman dipakai untuk project baru.
+
 ## Tech Stack
 
 - **Backend:** Laravel 12
@@ -107,6 +114,7 @@ Catatan:
 - **Jangan simpan data terenkripsi** (`encrypted` cast, `Crypt::`) yang bergantung pada `APP_KEY` milik satu app, karena key dipakai bersama.
 - Key session bersifat global antar app: beri awalan nama app untuk data session milik app (mis. `money.tour_shown`).
 - **Pengaturan akses terpusat**: halaman Users, Roles & Permissions hanya ada di hub (dan app standalone). Di hub, pilih app lewat tombol **Aplikasi** (atau `?app=money`). `super-admin` mengelola semua app; `<app>.admin` hanya app miliknya dan hanya user yang punya akses ke app itu. App client punya route `access.manage` (menu **Kelola Akses**) yang membuka `auth.elips.id/users?app=<app>`, tampil untuk `super-admin`/`<app>.admin`.
+- **Syarat admin app di hub**: role `<app>.admin` wajib memiliki permission bersama (`users.*`, `roles.*`, `permissions.*`, `activity-log.view`, daftar di `config('access.shared_permissions')`). Tanpa `users.view`/`roles.view`, admin app mendapat "Akses ditolak" saat membuka **Kelola Akses**. Seeder tiap app memberikannya otomatis; jangan hapus permission ini saat mengedit role admin di hub.
 - **Definisi permission tetap di tiap app** (`AppAccessSeeder` → `$appPermissions`), karena kode app yang memakainya. Hub hanya membagikan permission itu ke role. Permission baru: tambahkan di seeder app, deploy, jalankan seeder; permission langsung muncul di hub.
 - **Cache permission bersama**: Spatie meng-cache pemetaan role → permission. Semua app memakai store `shared` (tabel `shared_cache` di Supabase) lewat `PERMISSION_CACHE_STORE=shared`, sehingga perubahan role/permission di hub langsung berlaku di app lain. Tanpa ini, app lain baru melihat perubahan setelah cache 24 jam habis.
 - **Turnstile**: satu widget dipakai semua app dengan hostname `elips.id` (berlaku untuk semua subdomain). App baru di `*.elips.id` tidak perlu menambah hostname.
