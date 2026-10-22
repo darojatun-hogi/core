@@ -2,7 +2,7 @@
 # STAGE: base
 # Image dasar PHP-FPM dengan ekstensi yang dibutuhkan Laravel
 # =========================================================
-FROM php:8.3-fpm-alpine AS base
+FROM php:8.3.36-fpm-alpine AS base
 
 RUN apk add --no-cache \
     bash git curl \
