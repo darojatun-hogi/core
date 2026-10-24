@@ -6,6 +6,7 @@ use App\Models\User;
 use Database\Seeders\AppAccessSeeder;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -139,5 +140,57 @@ class SsoHubTest extends TestCase
     {
         $this->actingAs($this->makeUser())->post('/logout')->assertRedirect(route('login'));
         $this->assertGuest();
+    }
+
+    // Logout hanya mengeluarkan device ini: remember_token tetap supaya "remember me" di device lain masih berlaku
+    public function test_logout_keeps_remember_me_on_other_devices(): void
+    {
+        $user = $this->makeUser();
+        $this->post('/login', ['login' => 'hogi', 'password' => 'secret-password', 'remember' => '1']);
+        $token = $user->fresh()->remember_token;
+
+        $this->post('/logout');
+
+        $this->assertGuest();
+        $this->assertNotNull($token);
+        $this->assertSame($token, $user->fresh()->remember_token);
+    }
+
+    public function test_password_change_logs_out_other_devices(): void
+    {
+        config(['session.driver' => 'database']);
+        $user = $this->makeUser();
+        $other = $this->makeUser(['username' => 'other', 'email' => 'other@example.com']);
+        $user->setRememberToken('old-token');
+        $user->save();
+
+        $sessions = DB::connection(config('session.connection'))->table(config('session.table'));
+        foreach ([['hp', $user->id], ['laptop', $user->id], ['lain', $other->id]] as [$id, $userId]) {
+            $sessions->insert(['id' => $id, 'user_id' => $userId, 'payload' => '', 'last_activity' => time()]);
+        }
+
+        $user->update(['password' => 'new-password']);
+
+        $this->assertNotSame('old-token', $user->fresh()->remember_token);
+        $this->assertSame(['lain'], $sessions->pluck('id')->all());
+    }
+
+    // Device yang dipakai untuk ganti password tetap login: cookie "remember me" diterbitkan ulang dengan token baru
+    public function test_own_password_change_renews_remember_me_cookie(): void
+    {
+        $user = $this->makeUser();
+        $recaller = auth()->guard()->getRecallerName();
+
+        $this->actingAs($user)
+            ->withCookie($recaller, 'old')
+            ->put('/profile/password', [
+                'current_password' => 'secret-password',
+                'password' => 'new-password-123',
+                'password_confirmation' => 'new-password-123',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertCookie($recaller);
+
+        $this->assertAuthenticatedAs($user);
     }
 }

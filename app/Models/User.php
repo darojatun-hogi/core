@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use App\Models\Concerns\LogsOutOtherDevicesOnPasswordChange;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notifiable;
@@ -19,7 +20,7 @@ use Spatie\Activitylog\Models\Activity;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, HasRoles, LogsActivity;
+    use HasFactory, Notifiable, HasRoles, LogsActivity, LogsOutOtherDevicesOnPasswordChange;
 
     // Data auth terpusat di Supabase, data bisnis app tetap di MySQL
     protected $connection = 'supabase';

@@ -43,10 +43,11 @@ class SsoController extends Controller
         return redirect()->away(Sso::hubUrl('users', ['app' => config('access.app')]));
     }
 
-    // Session dipakai bersama semua app, jadi logout di sini juga keluar dari semua app
+    // Session dipakai bersama semua app, jadi logout di sini juga keluar dari semua app di browser ini.
+    // logoutCurrentDevice tidak mengganti remember_token, jadi device lain tetap login (ganti password = keluar dari semua device)
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::logoutCurrentDevice();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
