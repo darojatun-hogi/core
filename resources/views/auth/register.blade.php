@@ -28,10 +28,10 @@
 
 		{{-- Cloudflare Turnstile (aktif bila TURNSTILE_SITE_KEY diisi) --}}
 		@if (config('services.turnstile.site_key'))
-			<div>
+			<div class="flex flex-col items-center">
 				<div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}"></div>
 				@error('cf-turnstile-response')
-					<p class="mt-1.5 text-sm text-error">{{ $message }}</p>
+					<p class="mt-1.5 text-center text-sm text-error">{{ $message }}</p>
 				@enderror
 			</div>
 		@endif
