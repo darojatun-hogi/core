@@ -51,7 +51,8 @@ class SsoController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->away(Sso::hubUrl('login', ['redirect' => url(config('sso.home'))]));
+        // Lewat hub, supaya cookie lama milik host hub ikut terhapus. Hub lalu menampilkan halaman login.
+        return Sso::forgetHostCookies(redirect()->away(Sso::logoutUrl(url(config('sso.home')))));
     }
 
     // Halaman yang tadi ingin dibuka (disimpan middleware auth), atau halaman awal app ini

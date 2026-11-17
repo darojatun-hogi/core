@@ -88,11 +88,29 @@ class SsoClientTest extends TestCase
         $this->actingAs($user)->get('/access')->assertForbidden();
     }
 
-    public function test_logout_returns_to_hub_login(): void
+    // Logout diteruskan ke hub lewat tautan bertanda tangan, supaya hub juga menghapus cookie lama miliknya
+    public function test_logout_continues_at_hub_with_a_signed_link(): void
     {
-        $this->actingAs($this->makeOutsider())
-            ->post('/logout')
-            ->assertRedirect('https://auth.elips.id/login?redirect='.urlencode(url('/dashboard')));
+        $response = $this->actingAs($this->makeOutsider())->post('/logout');
+
         $this->assertGuest();
+        $location = $response->headers->get('Location');
+        $this->assertStringStartsWith('https://auth.elips.id/sso/logout?', $location);
+        parse_str(parse_url($location, PHP_URL_QUERY), $query);
+        $this->assertSame(url('/dashboard'), $query['redirect']);
+        $this->assertNotEmpty($query['signature']);
+    }
+
+    // Salinan cookie "Ingat saya" khusus host ini (tanpa Domain) ikut dihapus, bukan hanya salinan domain induk
+    public function test_logout_expires_cookies_stored_for_this_host_only(): void
+    {
+        config(['session.domain' => '.elips.id']);
+
+        $cookies = collect($this->actingAs($this->makeOutsider())->post('/logout')->headers->getCookies())
+            ->filter(fn ($c) => $c->getDomain() === null && $c->isCleared())
+            ->map->getName();
+
+        $this->assertContains(auth()->guard()->getRecallerName(), $cookies);
+        $this->assertContains(config('session.cookie'), $cookies);
     }
 }

@@ -77,6 +77,18 @@ class AuthController extends Controller
 
         $redirect = Sso::safeRedirect($request->input('redirect'));
 
+        return Sso::forgetHostCookies(redirect()->route('login', $redirect ? ['redirect' => $redirect] : []));
+    }
+
+    // Lanjutan logout dari app client (Sso::logoutUrl). Tautan tanpa tanda tangan sah hanya membuka halaman login.
+    public function logoutFromApp(Request $request)
+    {
+        if (Sso::hasValidLogoutSignature($request)) {
+            return $this->logout($request);
+        }
+
+        $redirect = Sso::safeRedirect($request->query('redirect'));
+
         return redirect()->route('login', $redirect ? ['redirect' => $redirect] : []);
     }
 

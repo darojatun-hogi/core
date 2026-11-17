@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\Sso;
 use Database\Seeders\AppAccessSeeder;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -154,6 +155,42 @@ class SsoHubTest extends TestCase
         $this->assertGuest();
         $this->assertNotNull($token);
         $this->assertSame($token, $user->fresh()->remember_token);
+    }
+
+    private function appLogoutPath(string $redirect): string
+    {
+        return '/sso/logout?'.parse_url(Sso::logoutUrl($redirect), PHP_URL_QUERY);
+    }
+
+    // Logout dari app client berlanjut di hub: keluar, hapus cookie lama khusus host hub, lalu ke halaman login
+    public function test_signed_logout_from_an_app_signs_out_and_keeps_remember_me_elsewhere(): void
+    {
+        config(['session.domain' => '.elips.id']);
+        $user = $this->makeUser();
+        $this->post('/login', ['login' => 'hogi', 'password' => 'secret-password', 'remember' => '1']);
+        $token = $user->fresh()->remember_token;
+
+        $response = $this->get($this->appLogoutPath('https://clip.elips.id/dashboard'));
+
+        $response->assertRedirect(route('login', ['redirect' => 'https://clip.elips.id/dashboard']));
+        $this->assertGuest();
+        $this->assertSame($token, $user->fresh()->remember_token);
+        $cleared = collect($response->headers->getCookies())
+            ->filter(fn ($c) => $c->getDomain() === null && $c->isCleared())->map->getName();
+        $this->assertContains(auth()->guard()->getRecallerName(), $cleared);
+    }
+
+    public function test_logout_link_with_a_bad_or_expired_signature_does_not_sign_out(): void
+    {
+        $this->actingAs($this->makeUser());
+        $path = $this->appLogoutPath('https://clip.elips.id/dashboard');
+
+        $this->get(str_replace('signature=', 'signature=x', $path))->assertRedirect();
+        $this->assertAuthenticated();
+
+        $this->travel(3)->minutes();
+        $this->get($path)->assertRedirect();
+        $this->assertAuthenticated();
     }
 
     public function test_password_change_logs_out_other_devices(): void

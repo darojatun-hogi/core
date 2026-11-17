@@ -25,6 +25,7 @@ if (config('sso.hub')) {
     Route::post('register',[AuthController::class, 'store'])->middleware('throttle:5,1')->name('register.store');
 
     Route::post('logout',[AuthController::class, 'logout'])->name('logout');
+    Route::get('sso/logout', [AuthController::class, 'logoutFromApp'])->name('sso.logout');
 
     Route::middleware('auth')->group(function () {
         Route::get('email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
