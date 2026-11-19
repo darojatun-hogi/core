@@ -1,4 +1,5 @@
-{{-- Landing page hub SSO. Juga dibuka lewat domain induk (elips.id), jadi tautan memakai APP_URL (auth.elips.id) --}}
+{{-- Landing page hub SSO. Juga dibuka lewat domain induk (elips.id), jadi tautan memakai APP_URL (auth.elips.id);
+	canonical ke domain induk supaya Google mengindeks satu alamat saja. --}}
 @section('title', 'Satu akun untuk semua aplikasi')
 @php
 	$hub = rtrim(config('app.url'), '/');
@@ -10,7 +11,7 @@
 	<head>
 		@include('partials.head')
 		<meta name="description" content="Satu akun untuk semua aplikasi Elips: Money, Clip, dan Portfolio.">
-		<link rel="canonical" href="{{ $hub }}/">
+		<link rel="canonical" href="https://{{ config('sso.allowed_domain') }}/">
 	</head>
 
 	<body class="min-h-screen bg-base-200 font-sans text-base-content antialiased">
