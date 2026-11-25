@@ -1,6 +1,9 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
+
+// Port Vite per app (VITE_PORT di .env), supaya beberapa app bisa `composer dev` bersamaan. Bawaan 5173.
+const port = Number(loadEnv('', process.cwd(), '').VITE_PORT) || 5173;
 
 export default defineConfig({
     plugins: [
@@ -12,9 +15,9 @@ export default defineConfig({
     ],
     server: {
         host: '0.0.0.0',
-        port: 5173,
+        port,
         strictPort: true,
-        origin: 'http://localhost:5173',
+        origin: `http://localhost:${port}`,
         cors: true,
         hmr: {
             host: 'localhost',

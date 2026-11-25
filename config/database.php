@@ -3,7 +3,7 @@
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
-return [
+$config = [
 
     /*
     |--------------------------------------------------------------------------
@@ -197,3 +197,12 @@ return [
     ],
 
 ];
+
+// Mode lokal (docs/lokal-tanpa-sso.md): APP_ENV=local + DB_LOCAL=true membuat koneksi "supabase" (pengguna, role, sesi)
+// memakai database lokal yang sama dengan koneksi utama di DB_*, supaya laptop tidak menyentuh database produksi.
+// Di luar APP_ENV=local saklar ini diabaikan.
+if (env('APP_ENV') === 'local' && filter_var(env('DB_LOCAL', false), FILTER_VALIDATE_BOOL)) {
+    $config['connections']['supabase'] = $config['connections'][$config['default']];
+}
+
+return $config;

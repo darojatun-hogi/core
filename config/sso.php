@@ -17,6 +17,10 @@ return [
 
     'hub_url' => rtrim((string) env('SSO_HUB_URL', 'http://localhost:8000'), '/'),
 
+    // Hanya untuk APP_ENV=local: halaman masuk lokal (pilih pengguna demo) menggantikan hub, supaya app bisa dijalankan
+    // tanpa auth.elips.id. Di luar APP_ENV=local saklar ini diabaikan. Lihat docs/lokal-tanpa-sso.md.
+    'local_login' => (bool) env('SSO_LOCAL_LOGIN', false),
+
     // Halaman awal app ini setelah login lewat hub (path di app ini)
     'home' => '/dashboard',
 

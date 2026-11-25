@@ -1,30 +1,40 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\RoleController;
+use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\LocalLoginController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PasswordResetController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ActivityLogController;
-use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SsoController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
 // SSO: hub (SSO_HUB=true) menangani login/register/verifikasi/reset password untuk semua app,
 // app client hanya meneruskan route bernama sama ke hub (lihat config/sso.php)
-if (config('sso.hub')) {
+if (LocalLoginController::enabled()) {
+    // Pengembangan lokal tanpa hub (APP_ENV=local + SSO_LOCAL_LOGIN=true, docs/lokal-tanpa-sso.md): form email/username + password, akun demo dari LocalDemoSeeder.
+    Route::get('login', [LocalLoginController::class, 'show'])->name('login');
+    Route::post('login', [LocalLoginController::class, 'login'])->name('local-login.login');
+    Route::redirect('register', 'login')->name('register');
+    Route::redirect('forgot-password', 'login')->name('password.request');
+    Route::get('email/verify', fn () => redirect(config('sso.home')))->name('verification.notice');
+    Route::match(['get', 'post'], 'logout', [LocalLoginController::class, 'logout'])->name('logout');
+    Route::redirect('/', '/dashboard')->name('root');
+} elseif (config('sso.hub')) {
     // Landing page hub, juga dibuka lewat domain induk (elips.id)
     Route::view('/', 'landing')->name('root');
     Route::get('login', [AuthController::class, 'login'])->name('login');
-    Route::post('login',[AuthController::class, 'authenticate'])->middleware('throttle:10,1')->name('login.authenticate');
+    Route::post('login', [AuthController::class, 'authenticate'])->middleware('throttle:10,1')->name('login.authenticate');
 
-    Route::get('register',[AuthController::class, 'register'])->name('register');
-    Route::post('register',[AuthController::class, 'store'])->middleware('throttle:5,1')->name('register.store');
+    Route::get('register', [AuthController::class, 'register'])->name('register');
+    Route::post('register', [AuthController::class, 'store'])->middleware('throttle:5,1')->name('register.store');
 
-    Route::post('logout',[AuthController::class, 'logout'])->name('logout');
+    Route::post('logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('sso/logout', [AuthController::class, 'logoutFromApp'])->name('sso.logout');
 
     Route::middleware('auth')->group(function () {
@@ -54,7 +64,7 @@ Route::middleware(['auth', 'app.access', 'verified'])->group(function () {
     // App client mengarahkan ke halaman Users di hub dengan app ini terpilih.
     if (config('sso.hub')) {
         Route::middleware('managed.app')->group(function () {
-            Route::resource('users',UserController::class);
+            Route::resource('users', UserController::class);
             Route::resource('roles', RoleController::class);
             Route::resource('permissions', PermissionController::class)->only(['store', 'destroy']);
         });
@@ -64,7 +74,7 @@ Route::middleware(['auth', 'app.access', 'verified'])->group(function () {
 
     Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::put('profile/password', [ProfileController::class,'updatePassword'])->name('profile.password.update');
+    Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
     Route::get('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
